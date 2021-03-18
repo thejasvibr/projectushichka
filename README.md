@@ -9,7 +9,10 @@ types (audio, video, LiDAR, derived data) and I'm realising it is better to
 invest in a well thought-out system before the growing complexity of the 
 enterprise tumbles over itself. 
 
-To see how all the data will be managed see this [document](ushichka-management.md).
+
+## Table of contents
+1. [Data management](ushichka-management.md).
+1. [Supporting data](supporting-datasets.md)
 
 ## What are the various types of data? 
 
