@@ -14,6 +14,32 @@ the most popular option I could find after a short online search. However, there
 are a whole bunch of tools. Which one I use will depend on the final goals of 
 the project itself. 
 
+I have considerd using a series of spreadsheet .csv files and manipulating them 
+with code. One point is that spreadsheets are somewhat easily altered by me/collaborators. 
+I'd actually like to keep the data about all the files and their relationship somewhat 
+difficult to alter without rigorous intent/thought. Having a formal database system 
+to maintain all file records therefore is seeming more appealing at this point. 
+
+As a Python based user I see there are three main options I have:
+1. sqlite
+1. mysql
+1. postgresql
+
+SQlite seems to be the quickest and lightest option amongst the three, though it is also the one that 
+does not have multi-user access, or even server-type construction. The .db file is the central piece behind
+the entire database, which makes it fast and light. MySQL is a popular option, though it is much heavier to 
+install, and relies on a server - which slows down its operation speed. Postgresql is said to be somewhat 
+bulky, very powerful, however to also have a steep learning curve. 
+
+At this point, I'm leaning towards learning the required skills on sqlite, implementing a database, and 
+then switching over the mysql at a later point once multiple users become regularly involved. Moreover, 
+I also checked and there are GUI options to view .db files, which means I could also just send collaborators 
+a .db file that they could examine the contents of the files independently without actually doing any coding. 
+
+The option to export tables in .db files into .csv files is also always there irrespective of the actual 
+framework in use - which also means I can send spreadsheets to collaborators as and when necessary. 
+
+
 ## What the 'end-goal' is
 In the longer-term (+1 year from now), I'd like the dataset and the DBMS to 
 be web-friendly. This would mean collaborators/users can access the dataset
