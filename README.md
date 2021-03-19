@@ -13,7 +13,8 @@ enterprise tumbles over itself.
 ## Table of contents
 1. [Data management](ushichka-management.md).
 1. [Supporting data](supporting-datasets.md)
-
+1. [Video-LiDAR alignment](video-lidar.md)
+1. [Mic self-positioning](mic-selfpos.md)
 ## What are the various types of data? 
 
 The broad types of primary data are: 
