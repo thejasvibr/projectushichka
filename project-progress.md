@@ -13,5 +13,5 @@ This document will document progress made on various fronts, including some asso
 * Gave talk introducing the Ushichka dataset on 25/3
 * Further work on inferring call direction using beam-shape models 
 * Started inspection of the dataset/files that are spread across 4 smaller hard drives
+	* Looking at redundancies between the 4 drives: in ```ushichka_docs/What is in the Ushichka dataset.ipynb``` notebook
 * Looking up computers + 6 TB hard drives to be ordered
-* 
