@@ -22,4 +22,4 @@ This document will document progress made on various fronts, including some asso
 * 6TB hard drive delivered
 * All unique audio and video raw data files listed: 2095 WAV files, 8163 TMC files. All copies of the WAV and TMC files spread on the 4 harddisks are identical
 (same MD5 hash)
-*
+* Brainstorm25 meeting. See [Notes](./brainstorm25.md)
