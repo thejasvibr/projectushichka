@@ -20,3 +20,6 @@ This document will document progress made on various fronts, including some asso
 
 * Decision to drop the idea of using a database management system as the learning curve may not be worth it. 
 * 6TB hard drive delivered
+* All unique audio and video raw data files listed: 2095 WAV files, 8163 TMC files. All copies of the WAV and TMC files spread on the 4 harddisks are identical
+(same MD5 hash)
+*
