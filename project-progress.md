@@ -15,3 +15,8 @@ This document will document progress made on various fronts, including some asso
 * Started inspection of the dataset/files that are spread across 4 smaller hard drives
 	* Looking at redundancies between the 4 drives: in ```ushichka_docs/What is in the Ushichka dataset.ipynb``` notebook
 * Looking up computers + 6 TB hard drives to be ordered
+
+## Week 3: 29/3 - 02/4
+
+* Decision to drop the idea of using a database management system as the learning curve may not be worth it. 
+* 6TB hard drive delivered
