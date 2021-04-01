@@ -1,6 +1,8 @@
 # Project progress
 This document will document progress made on various fronts, including some associated research work. 
 
+The work never ends: here's the [TODO list](TODO.md)
+
 ## Week 1: 15-19/3
 
 * Setting up this repository
@@ -22,4 +24,4 @@ This document will document progress made on various fronts, including some asso
 * 6TB hard drive delivered
 * All unique audio and video raw data files listed: 2095 WAV files, 8163 TMC files. All copies of the WAV and TMC files spread on the 4 harddisks are identical
 (same MD5 hash)
-* Brainstorm25 meeting. See [Notes](./brainstorm25.md)
+* Brainstorm25 meeting + chat with Pranav Khandelwal to see how to track bats in videos. See [Notes](./brainstorm25.md)

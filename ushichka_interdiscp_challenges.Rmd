@@ -1,0 +1,41 @@
+---
+title: "Ushichka and its (interdisciplinary) challenges"
+author: "Thejasvi Beleyur"
+date: "2021-04-01"
+output: pdf_document
+---
+
+The Ushichka dataset consists of multi-sensor, multi-night recordings of 
+echolocating bats in a cave. This document highlights the opportunity the 
+dataset provides to drive scientific and methodological development across
+different fields. 
+
+## 3D Video tracking of multiple bats
+
+* 3D video tracking: the three cameras in the dataset are calibrated
+(DLT coefficients can be estimated). Bats fly in and out of the field-of-view.
+* 2D tracking of the bats is perhaps achievable, but correspondence matching of
+the 2D tracks needs to be done. 
+* Building 3D tracks from the matched 2D tracks 
+
+## Acoustic tracking in dense audio scenes
+
+* Acoustic tracking with dense and possibly overlapping sounds is technical *terra nova*. 
+* Sounds must be detected, and correspondence matched across channels. With Ushichka, we could
+actually use the positions of the bats from 3D video tracking to inform the detection and 
+correspondence matching problems. 
+
+## Call parameter inference with beam-shape modelling
+Bats can alter many aspects of their calls, how loud, whether it is narrow/broad, or even where they point the call. Experiments have used densely packed mic arrays to track call parameters. This only works when 
+the bat calls directly onto the array. 
+
+To date only one beam-shape model has been used (piston in an infinite baffle) - and produces useful predictions only in  *front* of the bat. Using  realistic beam-shape models allows efficient inference of call parameters with fewer microphones and better call parameter estimation. 
+
+This requires:
+
+  * Fast implementations of sound radiation models (see Beranek & Mellow 2012) using computer algebra systems (piston in a sphere, piston in a closed baffle, rectangular cap in a sphere)
+  * Running parameter estimation on the optimised beam-shape models.
+
+## References:
+* Chapters 12-13, Beranek, L. L., & Mellow, T. (2012). Acoustics: sound fields and transducers. Academic Press.
+
