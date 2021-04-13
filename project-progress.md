@@ -25,3 +25,9 @@ The work never ends: here's the [TODO list](TODO.md)
 * All unique audio and video raw data files listed: 2095 WAV files, 8163 TMC files. All copies of the WAV and TMC files spread on the 4 harddisks are identical
 (same MD5 hash)
 * Brainstorm25 meeting + chat with Pranav Khandelwal to see how to track bats in videos. See [Notes](./brainstorm25.md)
+
+
+## Week 5: 12/4 - 16/4
+
+* Start proper implementation of piston in sphere in FriCAS. Raised issue on the emailing-list. 
+* Chat with potential Master's student to work on automated trajectory matching. 
