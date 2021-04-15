@@ -12,4 +12,4 @@ This document has a list of concrete things that need to be done. The sub-headin
 ## Try out bat tracklet detection: medium
 * Check out different methods of tracking bats in the videos. See [tracking notes](./brainstorm25.md)
 
-## 
+## Optimise beam-shape numerical evaluation code.
