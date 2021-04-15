@@ -38,3 +38,9 @@ beam-shapes for various models. Got a reply, it seems like working at such high 
 	that it has a somewhat steep learning curve, and variable types play a really important role -- needs some getting used to. 
 
 * Started microphone calibrations - Grossflugraum cleaned and basic equipment brought together.
+
+## Week 5: 12/4 - 16/4
+
+* Start proper implementation of piston in sphere in FriCAS. Raised issue on the emailing-list. 
+* Chat with potential Master's student to work on automated trajectory matching. 
+>>>>>>> 31d1c79c494ec6f497919f35d2a67995dd2111f5
