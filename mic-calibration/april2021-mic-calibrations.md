@@ -8,6 +8,7 @@ Grossflugraum (big flight room) at Seewiesen.
 
 * Soundcard : Fireface 802 (same piece used in 2018 fieldwork). Serial number: 23746770^[Number below the bar code next to the jack inputs behind]
 * RME TotalMix (control software): FX v1.31 (2016 release)
+	* The snapshot file (*.tmss) storing the channel layout, phantom power settings and gains are each stored in the dated folders. 
 * Laptop : Dell Latitude E6540 (same used in 2018 fieldwork), now running Windows 10. (insti identifier nb6096)
 * Speaker : Custom-built Polaroid speakers (also used in Beleyur & Goerlitz 2019 playbacks)
 * Microphones : SMP Knowles mics, SANKEN CO-100 mics. 
