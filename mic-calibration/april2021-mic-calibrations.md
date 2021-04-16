@@ -21,3 +21,18 @@ affecting alignment too much.
 The microphone was placed on to a cardboard sheet to mimic the effect of cave walls. This was especially done for all the SMP microphones. 
 
 
+[<img src="imgs/IMG_20210415_180407.jpg" height="500"/>](imgs/IMG_20210415_180407.jpg)
+[<img src="imgs/IMG_20210415_180413.jpg" height="500"/>](imgs/IMG_20210415_180413.jpg)
+
+The microphone is rotated around on its axis between 0-90degrees.
+
+[<img src="imgs/IMG_20210415_180419.jpg" height="250"/>](imgs/IMG_20210415_180419.jpg)
+[<img src="imgs/IMG_20210415_185824.jpg" height="250"/>](imgs/IMG_20210415_185824.jpg)
+
+
+### Notes 2021-04-15
+*Analysed on 2021-04-16* 
+I noticed a drop in rec. level as I moved the SMP mic from 0-90 deg. In principle one expects this, though, given the SMP mic 
+is so small - do we expect such directionality to be there? My analysis shows that the mic is indeed directional. See [this notebook](variation-in-rec-level.html).
+
+[<img src="imgs/no-board-effect.jpg" height="500"/>](imgs/no-board-effect.jpg)
