@@ -19,7 +19,7 @@ import scipy.io.wavfile as WAV
 import sounddevice as sd 
 
 mic_num = 'SMP1'
-angle = 'pseudo90'
+angle = '0'
 gain = '30'
 orientation='azimuth'
 timenow = dt.datetime.now()
@@ -93,5 +93,5 @@ while begin_pbk:
 S.stop()
 y = [ q.get() for each_segment in range(q.qsize())]
 rec = np.concatenate(y)
-output_folder = '.\\2021-04-15\\'
+output_folder = '.\\2021-04-16\\'
 WAV.write(output_folder+mic_rec_name, fs, rec)

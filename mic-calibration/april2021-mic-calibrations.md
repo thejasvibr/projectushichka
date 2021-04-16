@@ -6,7 +6,7 @@ Grossflugraum (big flight room) at Seewiesen.
 
 ### Devices used 
 
-* Soundcard : Fireface 802 (same piece used in 2018 fieldwork). Serial number: 23746770^[Number below the bar code next to the jack inputs behind]
+* Soundcard : Fireface 802 (same piece used in 2018 fieldwork). Serial number: 23746770*
 * RME TotalMix (control software): FX v1.31 (2016 release)
 	* The snapshot file (*.tmss) storing the channel layout, phantom power settings and gains are each stored in the dated folders. 
 * Laptop : Dell Latitude E6540 (same used in 2018 fieldwork), now running Windows 10. (insti identifier nb6096)
@@ -36,3 +36,7 @@ I noticed a drop in rec. level as I moved the SMP mic from 0-90 deg. In principl
 is so small - do we expect such directionality to be there? My analysis shows that the mic is indeed directional. See [this notebook](variation-in-rec-level.html).
 
 [<img src="imgs/no-board-effect.jpg" height="500"/>](imgs/no-board-effect.jpg)
+
+
+#### Footnotes
+* Number below the bar code next to the jack inputs behind

@@ -43,4 +43,5 @@ beam-shapes for various models. Got a reply, it seems like working at such high 
 
 * Start proper implementation of piston in sphere in FriCAS. Raised issue on the emailing-list. 
 * Chat with potential Master's student to work on automated trajectory matching. 
+* Microphone calibrations started. 
 >>>>>>> 31d1c79c494ec6f497919f35d2a67995dd2111f5
