@@ -5,7 +5,7 @@ the same.
 
 Primary changes: 
 * Sweep duration now 3ms from 10ms
-* Silence between playbacks now 1ms
+* Silence between playbacks now 100ms
 
 - Thejasvi Beleyur, code released with MIT license
 '''
@@ -19,7 +19,7 @@ import scipy.io.wavfile as WAV
 import sounddevice as sd 
 
 mic_num = 'SMP1'
-angle = '0'
+angle = '60'
 gain = '30'
 orientation='azimuth'
 timenow = dt.datetime.now()
