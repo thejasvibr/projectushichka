@@ -7,38 +7,47 @@ of data types, and will produce an even larger set of data types as work on
 it proceeds. What is the best tool to handle all the data types, and the 
 relationships they have to each other. 
 
-## Database management systems -- which one?
-My first thought is to use a database management system (DBMS). DBMS's can store
+## ~~Database management systems -- which one?~~
+~~My first thought is to use a database management system (DBMS). DBMS's can store
 multiple data types and the relationships between them. DBMS also seems to be
 the most popular option I could find after a short online search. However, there
 are a whole bunch of tools. Which one I use will depend on the final goals of 
-the project itself. 
+the project itself.~~
 
-I have considerd using a series of spreadsheet .csv files and manipulating them 
+~~I have considerd using a series of spreadsheet .csv files and manipulating them 
 with code. One point is that spreadsheets are somewhat easily altered by me/collaborators. 
 I'd actually like to keep the data about all the files and their relationship somewhat 
 difficult to alter without rigorous intent/thought. Having a formal database system 
-to maintain all file records therefore is seeming more appealing at this point. 
+to maintain all file records therefore is seeming more appealing at this point.~~
 
-As a Python based user I see there are three main options I have:
-1. sqlite
-1. mysql
-1. postgresql
+~~As a Python based user I see there are three main options I have:~~
+~~1. sqlite~~
+~~1. mysql~~
+~~1. postgresql~~
 
-SQlite seems to be the quickest and lightest option amongst the three, though it is also the one that 
+~~SQlite seems to be the quickest and lightest option amongst the three, though it is also the one that 
 does not have multi-user access, or even server-type construction. The .db file is the central piece behind
 the entire database, which makes it fast and light. MySQL is a popular option, though it is much heavier to 
 install, and relies on a server - which slows down its operation speed. Postgresql is said to be somewhat 
-bulky, very powerful, however to also have a steep learning curve. 
+bulky, very powerful, however to also have a steep learning curve.~~
 
-At this point, I'm leaning towards learning the required skills on sqlite, implementing a database, and 
+~~At this point, I'm leaning towards learning the required skills on sqlite, implementing a database, and 
 then switching over the mysql at a later point once multiple users become regularly involved. Moreover, 
 I also checked and there are GUI options to view .db files, which means I could also just send collaborators 
-a .db file that they could examine the contents of the files independently without actually doing any coding. 
+a .db file that they could examine the contents of the files independently without actually doing any coding.~~
 
-The option to export tables in .db files into .csv files is also always there irrespective of the actual 
-framework in use - which also means I can send spreadsheets to collaborators as and when necessary. 
+~~The option to export tables in .db files into .csv files is also always there irrespective of the actual 
+framework in use - which also means I can send spreadsheets to collaborators as and when necessary.~~
 
+## Managing the data: keeping it simple (plan change on 2021-03-30)
+After a few days of trying to learn sqlite3, I'm beginning to realise the learning curve is steeper than expected.
+Also, since I don't really expect to have millions of entries that need to be updated and altered regularly, I'm actually now
+thinking of trying my luck with managing a bunch of spreadsheets carefully. Moreover, given the time constraint of one year on
+the current grant, I need to focus on getting a working system, rather than a perfect system. 
+
+A DBMS is a plan for the future as of now. I will still need to be careful about adding the correct entries etc. and updating all 
+spreadsheets at once wherever I can. Perhaps by keeping all relevant data in the same DataFrame, I could update entries in one place
+whenever I detect mistakes. 
 
 ## What the 'end-goal' is
 In the longer-term (+1 year from now), I'd like the dataset and the DBMS to 
