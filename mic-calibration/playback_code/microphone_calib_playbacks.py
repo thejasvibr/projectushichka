@@ -123,35 +123,38 @@ if __name__ == '__main__':
     #all_pbk_sounds = np.concatenate(pbk_sounds)
     fs = 192000
     dev_ind = 40
-    for i in range(2):
-        timestamp = dt.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-        mic_rec_name = mic_num+'_'+'gaindB_'+gain+'_'+orientation+'_angle_'+angle+'_'+timestamp+'.wav'
-        print('playback starting....')
-        
-        num_in_out = kwargs.get('num_in_out',[9,1])
-        data_in_channel = kwargs.get('data_in_channel',[8])
-        numsamples_comlength = kwargs.get('numsamples_comlength', int(0.2*fs))
-        
-        q = queue.Queue()
-        S = sd.Stream(samplerate=fs, blocksize=numsamples_comlength, 
-                      channels=num_in_out,device=dev_ind)
-        S.start()
-        begin_pbk = True
-        while begin_pbk:
-            for each_pbk_series in  playback_sounds:
-                for each_sound in each_pbk_series:		
-                    input_data, error_msg = S.read(numsamples_comlength)
-                    S.write(each_sound)
-                    q.put(input_data[:,data_in_channel])
-
-            begin_pbk = False
-        S.stop()
-        del S
-        y = [ q.get() for each_segment in range(q.qsize())]
-        rec = np.concatenate(y)
-        output_folder = generate_todays_pbk_folder(**kwargs)
-        final_output_file = os.path.join(output_folder, mic_rec_name)
-        WAV.write(final_output_file, fs, rec)
-        print('playback done....sleeping a bit...')
-        time.sleep(5)
+    timestamp = dt.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    mic_rec_name = mic_num+'_'+'gaindB_'+gain+'_'+orientation+'_angle_'+angle+'_'+timestamp+'.wav'
+    perform_playback(playback_sounds, mic_rec_name)
+#    for i in range(2):
+#        timestamp = dt.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+#        mic_rec_name = mic_num+'_'+'gaindB_'+gain+'_'+orientation+'_angle_'+angle+'_'+timestamp+'.wav'
+#        print('playback starting....')
+##        
+#        num_in_out = kwargs.get('num_in_out',[9,1])
+#        data_in_channel = kwargs.get('data_in_channel',[8])
+#        numsamples_comlength = kwargs.get('numsamples_comlength', int(0.2*fs))
+#        
+#        q = queue.Queue()
+#        S = sd.Stream(samplerate=fs, blocksize=numsamples_comlength, 
+#                      channels=num_in_out,device=dev_ind)
+##        S.start()
+#       begin_pbk = True
+#        while begin_pbk:
+#            for each_pbk_series in  playback_sounds:
+#                for each_sound in each_pbk_series:		
+#                    input_data, error_msg = S.read(numsamples_comlength)
+#                    S.write(each_sound)
+#                    q.put(input_data[:,data_in_channel])
+#
+#            begin_pbk = False
+#        S.stop()
+#        del S
+#        y = [ q.get() for each_segment in range(q.qsize())]
+##        rec = np.concatenate(y)
+#        output_folder = generate_todays_pbk_folder(**kwargs)
+#        final_output_file = os.path.join(output_folder, mic_rec_name)
+#        WAV.write(final_output_file, fs, rec)
+#        print('playback done....sleeping a bit...')
+#        time.sleep(5)
         
