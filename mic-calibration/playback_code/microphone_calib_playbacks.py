@@ -127,7 +127,7 @@ def make_v2_playback_sounds():
         all_freq_pulses.append(one_tone_w_silences)
 
     for i in range(2):
-        all_freq_pulses.append(np.zeros(int(common_length)))
+        all_freq_pulses.append(np.float32(np.zeros(int(common_length))))
 
     # setup the speaker playbacks to first play the sweeps and then 
     # the pulses : 
@@ -214,7 +214,7 @@ if __name__ == '__main__':
 # WAV.write('pbk_v2.wav', int(fs),all_audio)
     
     playback_sounds, numsamples_comlength = make_v2_playback_sounds()
-    mic_num = 'grasnowallfar'
+    mic_num = 'grasnowall-2m'
     angle = '0'
     gain = '46'
     orientation='azimuth'
