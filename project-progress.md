@@ -51,3 +51,19 @@ beam-shapes for various models. Got a reply, it seems like working at such high 
 * Confirmatory meeting scheduled with Master's student
 * Microphone calibration + troubleshooting underway 
 * Succesful implementation of piston in a rigid sphere!!!
+* Group meeting presentation on 23/4 - v cool ideas and suggestions (see email conversations)
+* 2nd Meeting with Giray - Master's project confirmed
+
+## Week 7: 26/4-30/4 
+
+* Succesful implementation of oscillating cap of sphere. Some progress made optimising for speed too. 
+* Analysing 3 mic calibration data- troubleshooting still going on. 
+	* Building a pipeline and making sure things are as expected is taking a bit more time than I'd thought of!! (speaker also seems to show some variation?)
+	
+## Week 8: 3/5-7/5
+* Spontaneous meeting with HRG about issues related to mic calbiration 
+and where to take Ushichka. 
+	* Focus on getting the pipeline working for ONE audio-video recording. Acoustic tracking, video tracking, video--> acoustic tracking etc. 
+	* don't invest too much time documenting *everything*. It's a bit sad, but perform focussed data documentation -- focussing on
+	single bat recordings. 
+* contributed comments to Cluster grant w Michael Griesser, Hemal Naik for video tracking software development.
