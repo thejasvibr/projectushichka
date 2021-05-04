@@ -78,7 +78,7 @@ def make_v2_playback_sounds():
     Version 2 is different in the following aspects:
         * Shorter tones (5ms)
         * Tones sandwiched on left and right by silence, not after a silence.
-
+        * Add 2 silence buffers (0.4) to ensure all tones are played back.
     '''
     fs = 192000
 
@@ -125,6 +125,9 @@ def make_v2_playback_sounds():
         one_tone *= 0.5
         one_tone_w_silences = np.float32(np.concatenate((left_pulse_silence,one_tone,right_pulse_silence)))
         all_freq_pulses.append(one_tone_w_silences)
+
+    for i in range(2):
+        all_freq_pulses.append(np.zeros(int(common_length)))
 
     # setup the speaker playbacks to first play the sweeps and then 
     # the pulses : 
