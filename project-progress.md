@@ -66,4 +66,14 @@ and where to take Ushichka.
 	* Focus on getting the pipeline working for ONE audio-video recording. Acoustic tracking, video tracking, video--> acoustic tracking etc. 
 	* don't invest too much time documenting *everything*. It's a bit sad, but perform focussed data documentation -- focussing on
 	single bat recordings. 
-* contributed comments to Cluster grant w Michael Griesser, Hemal Naik for video tracking software development.
+* contributed to Cluster grant w Michael Griesser, Hemal Naik, Kano Fumihiro, Chase Nunez for video tracking software development.
+* Some more experiments to figure out whether the wall makes a difference etc. 
+* Troubleshooting work on the piston in a sphere
+
+## Week 8: 10/5 - 14/5
+
+* Successfully troubleshot piston in a sphere + had a fast FLINT implementation 
+	* there was a typo in the code + textbook itself -- leading to the apparently deviant output
+* Implemented multiple beamshape models - piston in infinite baffle, point source on sphere, and speed optimisations
+* Bachelor's student found to work on the LiDAR-thermal alignment. Meeting planned. 
+
