@@ -77,3 +77,8 @@ and where to take Ushichka.
 * Implemented multiple beamshape models - piston in infinite baffle, point source on sphere, and speed optimisations
 * Bachelor's student found to work on the LiDAR-thermal alignment. Meeting planned. 
 
+## Week 9: 17/5 - 21/5
+* Implementation of 3 all-round sound radiation models in *beamshapes*. Continuous integration implemented. Package seems to be ready for release
+* LiDAR+thermal video data shared. Initial camera calibrations made for 2018-08-17
+* 1st meeting with Julian+Bastian on aligning the thermal camera system and LiDAR scans. Data described and basic approaches discussed.
+ 
