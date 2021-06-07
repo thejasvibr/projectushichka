@@ -81,4 +81,17 @@ and where to take Ushichka.
 * Implementation of 3 all-round sound radiation models in *beamshapes*. Continuous integration implemented. Package seems to be ready for release
 * LiDAR+thermal video data shared. Initial camera calibrations made for 2018-08-17
 * 1st meeting with Julian+Bastian on aligning the thermal camera system and LiDAR scans. Data described and basic approaches discussed.
- 
+
+## Week 10: 24/5 - 28/5 
+* Sent emails informing colleagues about `beamshapes`
+* Some more microphone calibrations 
+* Troubleshooting piston in sphere with `beamshapes`
+
+## Week 11: 31/5 - 4/6
+* raised question in Math Exchange for the piston in sphere question https://math.stackexchange.com/q/4156607/933933
+* preparation for PhD defence 
+
+## Week 12: 07/6 - 11/6
+* 
+
+
