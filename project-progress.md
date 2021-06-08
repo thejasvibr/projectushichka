@@ -92,6 +92,7 @@ and where to take Ushichka.
 * preparation for PhD defence 
 
 ## Week 12: 07/6 - 11/6
+* Meeting with Giray on 7/6. He's implemented projection and re-projection workflows, and accuracy estiamtion. Next is to implement noise+ correspondence matching of points between cameras
 * 
 
 

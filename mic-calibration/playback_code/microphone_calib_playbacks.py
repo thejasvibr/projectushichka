@@ -214,9 +214,9 @@ if __name__ == '__main__':
 # WAV.write('pbk_v2.wav', int(fs),all_audio)
     
     playback_sounds, numsamples_comlength = make_v2_playback_sounds()
-    mic_num = 'gras-2mwall_amp401_speaker504'
-    angle = '90'
-    gain = '50'
+    mic_num = 'smp4-2mwall_amp401_speaker504'
+    angle = '0'
+    gain = '30'
     orientation='azimuth'
     kwargs = {'save_path':'../'}
     #all_pbk_sounds = np.concatenate(pbk_sounds)
