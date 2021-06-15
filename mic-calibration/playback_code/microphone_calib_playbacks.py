@@ -6,6 +6,7 @@ the same.
 Primary changes: 
 * Sweep duration now 3ms from 10ms
 * Silence between playbacks now 100ms
+* 2021-06-15 : add perform_v3_playback which plays back the standard output signal and records from channels 9+10 and saves to file.
 
 - Thejasvi Beleyur, code released with MIT license
 '''
@@ -202,6 +203,35 @@ def perform_v2_playback(playback_sounds, mic_rec_name, fs=192000, dev_ind=40, **
     final_output_file = os.path.join(output_folder, mic_rec_name)
     WAV.write(final_output_file, fs, rec)
 
+def perform_v3_playback(playback_sounds, mic_rec_name, fs=192000, dev_ind=40, **kwargs):
+    '''
+    '''
+    num_in_out = kwargs.get('num_in_out',[10,1])
+    data_in_channel = kwargs.get('data_in_channel',[8,9])
+    numsamples_comlength = kwargs.get('numsamples_comlength', int(0.2*fs))
+    
+    q = queue.Queue()
+    S = sd.Stream(samplerate=fs, blocksize=numsamples_comlength, 
+                  channels=num_in_out,device=dev_ind)
+    S.start()
+    begin_pbk = True
+    while begin_pbk:
+        for each_pbk_series in  playback_sounds:
+            for each_sound in each_pbk_series:	
+                S.write(each_sound)
+                input_data, error_msg = S.read(numsamples_comlength)
+                
+                q.put(input_data[:,data_in_channel])
+
+        begin_pbk = False
+    S.stop()
+    del S
+    y = [ q.get() for each_segment in range(q.qsize())]
+    rec = np.concatenate(y)
+    output_folder = generate_todays_pbk_folder(**kwargs)
+    final_output_file = os.path.join(output_folder, mic_rec_name)
+    WAV.write(final_output_file, fs, rec)
+
 
 
 if __name__ == '__main__':
@@ -216,7 +246,7 @@ if __name__ == '__main__':
     playback_sounds, numsamples_comlength = make_v2_playback_sounds()
     mic_num = 'smp4-2mwall_amp401_speaker504'
     angle = '0'
-    gain = '30'
+    gain = '30&50'
     orientation='azimuth'
     kwargs = {'save_path':'../'}
     #all_pbk_sounds = np.concatenate(pbk_sounds)
@@ -224,7 +254,7 @@ if __name__ == '__main__':
     dev_ind = 40
     timestamp = dt.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     mic_rec_name = mic_num+'_'+'gaindB_'+gain+'_'+orientation+'_angle_'+angle+'_'+timestamp+'.wav'
-    perform_v2_playback(playback_sounds, mic_rec_name)
+    perform_v3_playback(playback_sounds, mic_rec_name)
     
     
 #    for i in range(2):
