@@ -93,6 +93,13 @@ and where to take Ushichka.
 
 ## Week 12: 07/6 - 11/6
 * Meeting with Giray on 7/6. He's implemented projection and re-projection workflows, and accuracy estiamtion. Next is to implement noise+ correspondence matching of points between cameras
-* 
+* Preparations for PhD defence on 10/6
+
+## Week 13: 14/6-18/6
+* Clearing out Haus 10 
+* Some more isues with playback variation in the speaker recordings -- is it mic level recording now?
+* Visit to Konstanz to meet Iain and pick up computers that were ordered 
+
+
 
 
