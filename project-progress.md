@@ -99,7 +99,8 @@ and where to take Ushichka.
 * Clearing out Haus 10 
 * Some more isues with playback variation in the speaker recordings -- is it mic level recording now?
 * Visit to Konstanz to meet Iain and pick up computers that were ordered 
-
+* Met Ben Koger, who agreed to share the 2D tracking code he used for the Kasanka bats - trying to install and run the code as is now. 
+* 
 
 
 

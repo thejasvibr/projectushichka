@@ -72,11 +72,10 @@ def make_avged_fft(recording_name, fft_dictionary):
 
 def calculate_average_sweep_spectrum(audio, fs):
     sweeps = np.array_split(audio[int(fs*0.5):int(fs*1.5)],5)
-
     sweep_ffts = {}
 
     for i,each in enumerate(sweeps):
-        sweeps_bp = signal.lfilter(b,a,each)
+        sweeps_bp = each
         sweepregion, _ = get_loudest_part(sweeps_bp)
         sweep_only = sweeps_bp[sweepregion]
         sweeps_fft = 20*np.log10(np.abs(np.fft.rfft(sweep_only)))
