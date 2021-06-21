@@ -96,11 +96,16 @@ and where to take Ushichka.
 * Preparations for PhD defence on 10/6
 
 ## Week 13: 14/6-18/6
+
 * Clearing out Haus 10 
 * Some more isues with playback variation in the speaker recordings -- is it mic level recording now?
 * Visit to Konstanz to meet Iain and pick up computers that were ordered 
 * Met Ben Koger, who agreed to share the 2D tracking code he used for the Kasanka bats - trying to install and run the code as is now. 
-* 
+
+## Week 14: 21/6-25/6 
+
+* First succesful 2D tracks of bats from 2018-07-28 P00/67000.TMC 1-75 frames. Thanks to the code Ben shared, the tracking happens fairly well. 
+
 
 
 
