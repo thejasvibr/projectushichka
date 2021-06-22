@@ -105,7 +105,8 @@ and where to take Ushichka.
 ## Week 14: 21/6-25/6 
 
 * First succesful 2D tracks of bats from 2018-07-28 P00/67000.TMC 1-75 frames. Thanks to the code Ben shared, the tracking happens fairly well. 
-
+* Postdoc talk given at MPI-AB on 22 June 2021 10:30
+* 
 
 
 
