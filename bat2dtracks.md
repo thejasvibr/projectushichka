@@ -29,7 +29,6 @@ import battracker as bt
 
 for focal_frame_ind, _ in enumerate(image_files):
 	bt.simple_process_frame(image_files, bat_thresh, bat_area, focal_frame_ind)
-
 ```
 
 
