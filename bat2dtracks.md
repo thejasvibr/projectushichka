@@ -20,7 +20,17 @@ I can use the video data to send to Giray to test his trajectory assignment soft
 
 For the matching audio files see [here](audio-video-pairs.md).
 
+### Input-Output
+To ease use and reproducibility - what I really need is a 'package' that accepts a folder with frames and performs object detection 
+on the folder. Something like 
 
+```
+import battracker as bt
+
+for focal_frame_ind, _ in enumerate(image_files):
+	bt.simple_process_frame(image_files, bat_thresh, bat_area, focal_frame_ind)
+
+```
 
 
 

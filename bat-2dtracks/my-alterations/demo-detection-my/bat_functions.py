@@ -15,6 +15,65 @@ import sys
 #sys.path.append('/home/golden/general-detection/functions')
 import koger_tracking as ktf
 
+def simple_process_frame(image_files,  bat_thresh, bat_area, focal_frame_ind):
+    '''
+    Assumes dark bats over a bright background. 
+    
+    Alterations from original:
+    * remove background_array_size, first_frame arguments
+    
+    original code by BK, comments, numpystyle docs and other alterations by TB
+    
+    Parameters
+    ----------
+    image_files : list 
+        List with file paths. Each image is expected to have 3 channels (RGB or the like).
+    first_frame : int
+    bat_thresh : float
+        Threshold above which a bat is detected
+    bat_area : float
+        Minimum area that a bat occupies in pixels
+    focal_frame_ind : int
+        Index of image to be processed. 
+    
+    Deprecated Arguments
+    ---------------------
+    background_array_size : int
+    first_frame : int
+    
+    Returns
+    -------
+    dictionary with various outputs given by bat_functions.process_frame
+    
+    Note
+    ----
+    Images are assumed to be 3 channel (RGB) images, where the 3rd channel (2nd index) 
+    is used for all object detection. For images that are originally single-channel, 
+    just generate zero-data for the first two channels OR replicate the data onto two
+    other channels to make the image a 3D array (width x height x 3). 
+
+    '''
+
+    images = []
+    for file in image_files:
+        image = cv2.imread(file)
+        images.append(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+    images = np.stack(images)
+    # Here taking blue channel. Should |be changed is images already 2D
+    background_sum = np.sum(images[:,:,:,2],0, dtype=np.int16)
+
+    bat_centers, bat_areas, bat_contours, rect_angles, bat_sizes, bat_rects, bat_thresh, binary = process_frame(
+                                    images, focal_frame_ind, bat_thresh, background_sum, bat_area, debug=True)
+    
+    return {'bat_centers': bat_centers,
+            'bat_areas': bat_areas,
+            'bat_contours': bat_contours,
+            'rect_angles': rect_angles,
+            'bat_sizes': bat_sizes,
+            'bat_rects': bat_rects,
+            'bat_thresh': bat_thresh,
+            'binary': binary}
+
 
 def mark_bats_on_image(image_raw, centers, radii=None, 
                        scale_circle_size=5, contours=None, 
