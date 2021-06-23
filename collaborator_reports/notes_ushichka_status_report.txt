@@ -1,0 +1,43 @@
+SFM Thermal-LiDAR alignment: Julian Jandeleidt, Bastian Goldluecke
+
+Notes on report sent by Julian: 
+
+Structure from Motion pipeline: 
+
+* 'onto pixel coordinates of 2 pinhole cameras that were placed into the scene and the up-to-scale reconstruction of the 3D structure.' - was a pinhole camera also used for all the thermal-LiDAR matching? 
+
+Preprocessing step:
+* Used a median filter to 'get rid' of salt and pepper noise. Was this a 2D median filter that was convolved through the scence or through time? 
+	* alternatively some kind of image averag/median-ing could be performed -- this would also remove the moving humans in the scene, and also generate 
+	a better picture of which parts of the cave are cooler/hotter than others. 
+
+Feature detection and matching:
+
+* Combined 
+
+Point cloud reconstruction:
+
+* 'The filtered feature correspondences are used to estimate the essential matrix directly using the MSAC scheme.' -- why estimate the essential matrix, the DLT coefficients are already there!!
+* 'Somehow the essential matrix, and therefore also the relative camera position, is quite unstable.' - I guess there isn't enough info from just the cave data to figure this all out. 
+
+Point cloud registering:
+
+* 'I think getting the scaling factor right is crucial for the 3D-matching and registration process.' - the DLT coefficients and everything in there should actually provide all required scale information!
+
+Potential things to work on:
+
+1. Camera related: move from a simple pinhole camera to one with distortions
+2. Camera related: use the estimated DLT coefficients to get a real-world scale and the relative positions/orientations of each camera in the scene
+3. Image processing related: use a median-filtered image derived from the median of each pixel over the image stack 
+4. Image processing related: perform edge detection on the images before performing feature detection 
+
+
+* Upload the wand calibration videos for Julian to work on
+* Upload the 
+
+Terms:
+
+* Fundamental matrix: 3x3 matrix that maps points from one camera view to the other. Can be estimated given at least 7 points. 
+* SIFT (scale invariant feature transform): algorithm used to find features across multiple views. The alg. detects points across scenes that can be matched
+even though the relative size and orientation may differ. 
+* 

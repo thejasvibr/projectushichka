@@ -32,6 +32,10 @@ All the above data need to be uploaded online somewhere too!
 
 ## Updates: 
 
+* 23/6 : second meeting between Julian, Bastian, Thejasvi. Discussed outcomes from first pipeline that Julian's implemented, some suggestions:
+	* implement pixel-level median filtering
+	* use already estimated DLT coefficients for feature matching 
+	* try to 
 * 21/5 : first scheduled meeting between Bastian, Julian and Thejasvi. Data shared and broad strategies discussed.
 * 14/5 : Julian Jandeleidt -BSc candidate will be working on aligning the thermal and LiDAR data. 
 
