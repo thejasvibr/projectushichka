@@ -107,7 +107,8 @@ and where to take Ushichka.
 * First succesful 2D tracks of bats from 2018-07-28 P00/67000.TMC 1-75 frames. Thanks to the code Ben shared, the tracking happens fairly well. 
 * Talk given at MPI-AB on 22 June 2021 10:30
 * Shared bat detections with Giray for two videos 2018-07-28 P00/97000.TMC and 2018-07-28 P00/35000.TMC (frames 1-75 only)
-* 
-
+* Giray progress - so far has established 3dtrajectory matching using a) known 2D trajectories across videos AND has also implemented
+b) 3D trajectory matching with only points and no 2D traj labels!
+* Acoustic tracking shown to work for speaker playbacks 2018-07-28/P02/02000.TMC and '...multichirp_2018-07-29_09-42-59' audio. 
 
 
