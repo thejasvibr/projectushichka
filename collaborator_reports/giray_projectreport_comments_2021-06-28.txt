@@ -1,0 +1,30 @@
+Giray report comments:
+
+* Title: 
+	The title is misleading, as the project doesn't deal with 'optimisation' directly (Of course to perform matching one needs to optimise various things like projection errors etc). How about  
+		* Matching 3d trajectories from multi-view 2D trajectories
+		* Multi-view 2D and 3D trajectory matching 
+		or something along these lines -- the focus is on 'matching' or something which evokes this idea.
+* Supervisor list: 
+	* Please change my affiliation to 'Centre for the Advanced Study of Collective Behaviour, Uni Konstanz' (I only have a guest contract at the MPIO)
+* Keywords: 
+	* could also add 'correspondence matching' 
+* Abstract: A
+	* Also include the fact that you handle two sub-problems - where the 2D labels are known (all points are assigned to one 2D traj.), and where the trajecotry labels are unknown - where the points do not have any labels associated. 
+* Introduction:
+	* '2D points can be reflected back into 3D space.' - do you mean 'projected back into 3D space'?
+	* 'An example of epipolar geometry can be seen at Figure 4.' -- do you mean figure 1?
+	* Last paragraph: 'In this paper, I implemented a method for matching the corresponding 2D trajectories with another method which reconstructs 3D trajectories based on matched 2D trajectories.' -- here, spend some more time focusing on the 2 sub-problems you actually solved!
+* Methods:
+	* 'To start with, OpenCV (Open Source Computer Vision Library) ...' - this is a fairly well known package, and can shorten the sentence by only including the reference directly. ( it is very cool, but think of the reader who's familiar with your field, it'll take away their limited attention to read all these already known details). 
+	* 
+
+* Figure 1:
+	* The figure caption by itself isn't enough to tell the reader how to understand the figure. Is this image taken from ref. 3 - if yes, then state it clearly. 
+	In general, try to imagine that the reader will read the figure independently of the main text and then write the caption. 
+* Figure 2:
+	* Could you try reducing the size of the image? Remember this is *your* report - and so try to give more prominence to your work and results :)! 
+* Figure 4:
+	* The figure needs captions. See comments made for Figure 1
+* Figure 5:
+	* See above. 
