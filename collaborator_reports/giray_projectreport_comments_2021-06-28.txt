@@ -1,30 +1,67 @@
 Giray report comments:
 
-* Title: 
-	The title is misleading, as the project doesn't deal with 'optimisation' directly (Of course to perform matching one needs to optimise various things like projection errors etc). How about  
-		* Matching 3d trajectories from multi-view 2D trajectories
-		* Multi-view 2D and 3D trajectory matching 
-		or something along these lines -- the focus is on 'matching' or something which evokes this idea.
-* Supervisor list: 
+Title: 
+The title is misleading, as the project doesn't deal with 'optimisation' directly (Of course to perform matching one needs to optimise various things like projection errors etc). How about  
+	* Matching 3d trajectories from multi-view 2D trajectories
+	* Multi-view 2D and 3D trajectory matching 
+	or something along these lines -- the focus is on 'matching' or something which evokes this idea.
+	
+Supervisor list: 
 	* Please change my affiliation to 'Centre for the Advanced Study of Collective Behaviour, Uni Konstanz' (I only have a guest contract at the MPIO)
-* Keywords: 
+
+Keywords: 
 	* could also add 'correspondence matching' 
-* Abstract: A
+Abstract: 
 	* Also include the fact that you handle two sub-problems - where the 2D labels are known (all points are assigned to one 2D traj.), and where the trajecotry labels are unknown - where the points do not have any labels associated. 
-* Introduction:
+
+Introduction:
 	* '2D points can be reflected back into 3D space.' - do you mean 'projected back into 3D space'?
 	* 'An example of epipolar geometry can be seen at Figure 4.' -- do you mean figure 1?
 	* Last paragraph: 'In this paper, I implemented a method for matching the corresponding 2D trajectories with another method which reconstructs 3D trajectories based on matched 2D trajectories.' -- here, spend some more time focusing on the 2 sub-problems you actually solved!
-* Methods:
+
+Methods:
 	* 'To start with, OpenCV (Open Source Computer Vision Library) ...' - this is a fairly well known package, and can shorten the sentence by only including the reference directly. ( it is very cool, but think of the reader who's familiar with your field, it'll take away their limited attention to read all these already known details). 
+	* The methods section can be split up into more subsections:
+		3.1 --> deals with known 2D labels
+		* 3.1.1 proposed algorithm to match labelled 2D points
+		3.2 --> deals with only points without labels -- this is the 3.3 'auxiliary' section. Don't treat it as 'auxiliary' -- it is a 		very cool part of the project you've worked on!!
 	* 
 
-* Figure 1:
+Data creation: 
+rename it to 'synthetic data'. 'Data creation' sounds weird/unusual
+
+	* This segment should go in the 'Methods' section - and not come after Results. 
+	* Give a table with the Go Pro Hero 3 parameters (focal length, distortion coeffs. etc) - so a reader can get an idea what kind of camera it is. 
+
+Corresponding 2D Trajectory Matching:
+
+	* '..which has zero mean distribution' --> '..which has zero mean distribution in pixels' (mention the physical units)
+
+Disclaimers:
+
+	* 'During the implementation and gathering the results, versions of Python 3.9, and OpenCV-python 4.5.2.54 are used. The implemented
+methods are not tested with other versions. Therefore, with other versions, the results may differ.' --  this part is not really relevant to the science. Mention the package and Python versions in the methods-  it should be enough. Delete this part otherwise. This section is more relevant on the docs page of the software project - and not so much in the 'science' part of this report. 
+	* 'Furthermore....' - this part can be moved down to the 'Future directions' section. The sentence doesn't really have any 'disclaimer' type content in it and so doesn't fit here. 
+
+Discussion:
+	* discuss the results and some poitns that are particularly interesting - and why it may be so. eg. 1) Even with 0 noise I see that 100% matching is never achieved - why is this? 2) the matching actually doesn't seem to be very affected by the amount of noise -- this itself is rather interesting - why is this? 
+
+Issues: 
+	* Use the SI convention and use 'dots' instead of commas! eg. 0,0354mm --> 0.0354 mm -- Also, looking Figure 7 - shouldn't the units be in m ( 0.0354 m)? Which unit is correct - check this as it makes a big difference :p 
+
+
+Add a 'Future Work' header and include the stuff you'd like to implement in the future (work on 'real' datasets, and some of the other algorithms not handled in this project report).
+
+
+Figure 1:
 	* The figure caption by itself isn't enough to tell the reader how to understand the figure. Is this image taken from ref. 3 - if yes, then state it clearly. 
 	In general, try to imagine that the reader will read the figure independently of the main text and then write the caption. 
-* Figure 2:
+Figure 2:
 	* Could you try reducing the size of the image? Remember this is *your* report - and so try to give more prominence to your work and results :)! 
-* Figure 4:
+Figure 4:
 	* The figure needs captions. See comments made for Figure 1
-* Figure 5:
+Figure 5:
 	* See above. 
+	* In general I tend to avoid bar-plots. A cleaner way tho visualise this is to use a line plot that connect all 3,5,and 7 object data points. Just a suggestion, I know you don't have much timek, but just something to keep in mind for next time. 
+Figure 6:
+	* See comments for Fig 5. 
