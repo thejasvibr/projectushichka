@@ -111,4 +111,19 @@ and where to take Ushichka.
 b) 3D trajectory matching with only points and no 2D traj labels!
 * Acoustic tracking shown to work for speaker playbacks 2018-07-28/P02/02000.TMC and '...multichirp_2018-07-29_09-42-59' audio. 
 
+## Week 15: 28/6-2/7
+* Figure out that acoustic tracking is off prob'ly because of reverberance. Try various heuristics to sort acoustic tracking issues. 
+* Discover the DATEMM algorithm (Scheuing & Yang 2008) -- shows promise in finding the right set of TDOAs in reverberant environments
+* Begin working on Walter-Benjamin postdoc proposal.
 
+## Week 16: 05/7- 09/7
+* Further work on DATEMM implementation 
+* A rough 4-channel DATEMM implementation in place 
+
+## Week 17: 12/7-16/7
+* Work on pending manuscripts (HBC + Ushichka manuscript) to bolster application profile for Walter-Benjamin
+* VCC inaugral meeting 
+* Final submission of thesis related documents (signed forms, 4 thesis copies)
+* First meeting with Kalle:
+	* TB will upload the 10 nights of chirp playbacks along with laser-range finder data and original playback signal 
+	* plans to continue methods development and GUI postponed to later

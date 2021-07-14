@@ -15,10 +15,18 @@ The relevant video folder for the scan is 2018-08-17.
 1. Wand calibration data to generate camera extrinsic (and intrinsic) parameters for each night. 
 1. LiDAR scan data
 
-All the above data need to be uploaded online somewhere too!
+All the above data are uploaded here: https://owncloud.gwdg.de/index.php/s/1Lqh0SKFVjjsHLB
 
 	* LiDAR scans - being uploaded now
 	* Video data from 2018-08-17 session 
+		* Wand videos
+			* 2018-08-17/K1/00121000.TMC (8619f)
+			* 2018-08-17/K2/00115000.TMC (8619f)
+			* 2018-08-17/K3/00116000.TMC (8619f)
+		* Mic position and cave wall pointing: (Filepaths, frames)
+			*  2018-08-17/K1/P02/123000.TMC (8177f), 124000.TMC (1493f)
+			*  2018-08-17/K2/P02/117000.TMC (8177f), 118000.TMC (1493f)
+			*  2018-08-17/K3/P02/118000.TMC (8177f), 119000.TMC (1493f)
 	* DLT coefficients + relative orientations. (*Does DLTdv*
 
 

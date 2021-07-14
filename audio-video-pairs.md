@@ -20,7 +20,12 @@ Thus the matching is 0001.TMC ---> first audio file, and 00115000.TMC --> last a
 
 Which means:
 
-| Video file name| Audio timestamp|
-|----------------|----------------|
-| 00035000.TMC   |    1532807201  |
-| 00097000.TMC   |    1532812513  |
+| Video file name| Audio timestamp| Description |
+|----------------|----------------|-------------|
+| 00035000.TMC   |    1532807201  |             |
+| 00097000.TMC   |    1532812513  |             |
+
+
+
+### 2018-08-17 session 2,3
+The calibration runs
