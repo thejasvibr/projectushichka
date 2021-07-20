@@ -1,0 +1,6 @@
+
+## Mic-to-mic measurements
+	* Measurement error of +/- 0.01m 
+
+## Other notes:
+	* Weather measurement at 3:39 2018-07-22, 97.1% RH, 11.7C

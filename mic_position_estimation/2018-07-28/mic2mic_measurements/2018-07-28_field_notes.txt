@@ -1,0 +1,7 @@
+
+## Mic-to-mic measurements
+	* Measurement error of +/- 0.05 m 
+
+## Other notes
+	* Weather measurement made on 2018-07-28 21:52:  12.8C, 994.3 hPa, 91.9% RH
+

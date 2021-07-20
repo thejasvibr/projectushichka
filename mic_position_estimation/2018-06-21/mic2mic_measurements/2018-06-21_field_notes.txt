@@ -1,0 +1,7 @@
+
+## Mic-to-mic measurements
+	* All mic-to-mic distances derived from TotalStation x,y,z position 
+	* Expected measurement error in mic-to-mic distances: +/- 0.01 m
+
+## Other notes
+	* Some microphones had loose contacts or had almost undetectable signals - they were removed. 

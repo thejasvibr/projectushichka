@@ -1,7 +1,14 @@
 
-* Measurements taken at 2018-06-19,23:00: Relative humidity: 92.9%, Temperature: 12.7 C
+## Mic-to-mic measurements
 
-* No explicit mic2mic distances taken. Tristar array used which means channels 9-12 are in tristar configuration. 
+	* Expected measurement error in mic-to-mic distances: +/- 0.01 m
+	* The mic-to-mic distances for only 4 microphones have been measured
+
+## Other notes
+
+	* Measurements taken at 2018-06-19,23:00: Relative humidity: 92.9%, Temperature: 12.7 C
+
+	* No explicit mic2mic distances taken. Tristar array used which means channels 9-12 are in tristar configuration. 
 	* However, no explicit mention of channel order in tristar array (if it is 9,10,11,12 in cc or anti-cc direction)
 
-# Some microphones fell to the ground: microphones 1,2,4 fell to the ground - and their final estimated positions may actually reflect this!
+	* Some microphones fell to the ground: microphones 1,2,4 fell to the ground - and their final estimated positions may actually reflect this!

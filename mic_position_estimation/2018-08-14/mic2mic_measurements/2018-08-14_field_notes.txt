@@ -1,0 +1,11 @@
+
+## Mic-to-mic measurements
+	* Measurement error of +/- 0.02 m 
+
+## Other notes
+	* SMP3 had actually fallen to the ground at some point (channel 3) -- and was not on the wall anymore at the 
+	end of the experiment session. 
+	* This session is the first of the 'mega' multi-device setups, with a Fireface 802, Fireface UC and the 
+	more mics added in. 
+	* Weather measurement at 2018-08-15 3:30: 12.7 C, 85.4 % RH, 997 hPa
+

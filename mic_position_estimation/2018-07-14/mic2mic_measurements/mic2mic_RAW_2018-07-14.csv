@@ -1,0 +1,12 @@
+,channel1,channel2,channel3,channel4,channel5,channel6,channel7,channel8,channel9,channel10,channel11
+channel1,0.0,1.2,1.2,1.2,NaN,NaN,NaN,NaN,NaN,NaN,NaN
+channel2,1.2,0.0,2.0784609690826525,2.078460969082653,NaN,NaN,NaN,NaN,NaN,NaN,NaN
+channel3,1.2,2.0784609690826525,0.0,2.078460969082653,NaN,NaN,NaN,NaN,NaN,NaN,NaN
+channel4,1.2,2.078460969082653,2.078460969082653,0.0,NaN,NaN,NaN,NaN,NaN,NaN,NaN
+channel5,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN
+channel6,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN
+channel7,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN
+channel8,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN
+channel9,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN
+channel10,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN
+channel11,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN

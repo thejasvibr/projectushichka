@@ -1,0 +1,8 @@
+
+## Mic-to-mic measurements
+	* Measurement error of +/- 0.01m 
+	* Even though the mic-to-mic measurements are there only for 4 microphones, channels 5 onwards were aligned over two 
+	horizontal lines using two laser lines. 
+	* The positions of mic 5 onwards should share the same z coordinate as they were aligned with two horizontal cross-hair lasers.
+		* 'Line 1 mics' : channel 5, 7, 8, 10, 11
+		* 'Line 2 mics' : channel 6, 9
