@@ -1,5 +1,23 @@
 Ushichka data for mic self-positioning
 ======================================
+Last updated: 2021-07-22
+
+
+
+Audio data
+----------
+The set of folders contains multi-channel audio of the 'speaker playbacks', which typically consist
+of 1-2 minute long recordings of speaker playing a signal repeatedly as it was moved in the recording 
+chamber. 
+
+Mic-to-mic measurements
+-----------------------
+The mic-to-mic measurements were performed with a laser range finder with 1 mm accuracy. However, in reality, 
+the 'pointing' error is likely to be upto +/- 2 cm. I would expect that the measurement error is somehow directly
+proportional to the distance, as with larger distance the literal jitter introduced by shaking hands and lowered
+pointing accuracy must be considered. 
+
+
 
 Folder structure and contents
 -----------------------------
