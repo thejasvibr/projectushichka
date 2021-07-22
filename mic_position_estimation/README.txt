@@ -24,6 +24,7 @@ Folder structure and contents
 
 Each experimental session has the following structure and contents:
 	* YYYY-MM-DD
+
 		* mic2mic_measurements:
 			* YYYY-MM-DD_field_notes.txt : text file with expected measurement error and any other observations 
 			that might help with troubleshooting mic self-positioning
@@ -38,3 +39,9 @@ Each experimental session has the following structure and contents:
 			On some experiment sessions, the actual digital signal that was fed to the speaker was recorded at the 
 			same time. The 'digital_playbacksignal' file has this data. 
 			* YYYY-MM-DD_alignment.py : .py file with code used to generate the final composite speaker playback file
+
+		* playback_signals:
+			* Folder with all the playback signals that are repeated. The silences are an important part of the signal 
+			as they decide its periodicity!
+			* The file 'session_wise_signalfiles.csv' maps the experimental session (the YYYY-MM-DD folders) to the playback signal used on that session. 
+			* The playback signals are all derived from the 'https://github.com/thejasvibr/AV_calibration_playback.git' repo.
