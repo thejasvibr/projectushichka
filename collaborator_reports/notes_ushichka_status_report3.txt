@@ -1,0 +1,16 @@
+SFM Thermal-LiDAR alignment: Julian Jandeleidt, Bastian Goldluecke
+
+Notes on 3rd report sent by Julian: 
+
+* applied median filtering of all the pixels across the image stack for all cameras. 
+* generated 'rectified images' -- what are these, are these the undistorted images? - Not clear
+* created disparity maps, and is able to compare images from camera pairs.
+	* ? is a higher disparity mean better matching, or the other way round?
+	* disparity maps show the # of pixels that need to be shifted between image pairs to get the same/similar views. Allows a matching of features across images?
+
+* Also referring to Julian's email: 
+	* 'The microphones could help in aligning. However I presume that the actual "tack 	points" would need to be annotated manually, correct?
+	Also they would need to be marked in the lidar scan to compute a transformation 	from thermal point cloud to lidar point cloud.'
+	* My response: can't the microphone points be somehow aligned with the LiDAR points -- using a distance matrix or something like that?
+	* 
+
