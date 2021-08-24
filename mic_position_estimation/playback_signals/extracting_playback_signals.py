@@ -64,11 +64,11 @@ plt.subplot(212, sharex=a0)
 plt.specgram(sweep_2Hz+np.random.normal(0,1e-5,sweep_2Hz.size), Fs=fs)
 
 #%% Saving the sweeps
-playback_files = ['hyperbolicsweep_1Hz.wav', 'hyperbolicsweep_2Hz.wav', '9chirp_set.wav']
+signal_files = ['hyperbolicsweep_1Hz.wav', 'hyperbolicsweep_2Hz.wav', '9chirp_set.wav']
 
 
-sf.write(playback_files[0], sweep_1Hz, fs)
-sf.write(playback_files[1], sweep_2Hz, fs)
+sf.write(signal_files[0], sweep_1Hz, fs)
+sf.write(signal_files[1], sweep_2Hz, fs)
 
 
 #%% The 9chirp series 
@@ -80,13 +80,21 @@ plt.figure()
 plt.specgram(multichirp_1, Fs=fs)
 
 #%% Write the sessions and file names 
-df = pd.DataFrame(data={'2018-06-19':playback_files[0],
-                        '2018-06-21': playback_files[0],
-                        '2018-06-22': playback_files[0],
-                        '2018-07-14': playback_files[1],
-                        '2018-07-21': playback_files[2],
-                        '2018-07-25': playback_files[2],
-                        '2018-07-28': playback_files[2],
-                        '2018-08-14': playback_files[2],
-                        '2018-08-17': playback_files[2],
-                        '2018-08-19': playback_files[2]})
+data =     {'2018-06-19': signal_files[0],
+            '2018-06-21': signal_files[0],
+            '2018-06-22': signal_files[0],
+            '2018-07-14': signal_files[1],
+            '2018-07-21': signal_files[2],
+            '2018-07-25': signal_files[2],
+            '2018-07-28': signal_files[2],
+            '2018-08-14': signal_files[2],
+            '2018-08-17': signal_files[2],
+            '2018-08-19': signal_files[2]}
+keys = []
+entries = []
+for key, entry in data.items():
+    keys.append(key)
+    entries.append(entry)
+    
+df = pd.DataFrame(data={'session_date':keys, 'playback_files':entries})
+df.to_csv('session_wise_signalfiles.csv')
