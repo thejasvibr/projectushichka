@@ -12,5 +12,17 @@ Notes on 3rd report sent by Julian:
 	* 'The microphones could help in aligning. However I presume that the actual "tack 	points" would need to be annotated manually, correct?
 	Also they would need to be marked in the lidar scan to compute a transformation 	from thermal point cloud to lidar point cloud.'
 	* My response: can't the microphone points be somehow aligned with the LiDAR points -- using a distance matrix or something like that?
-	* 
+	* "The result was a ceiling-of-a-cave like structure, but the “border lines” 
+dominate the result, so a 2D view for illustration purposes is not practical. 
+		* Which ceiling portion did he see - e.g. there's the pyramid on the ceiling that should be easily visible. 
 
+Notes during/after the meeting (2021-09-10):
+* Bachleor's project will run till end Sept. 
+
+notes from the presentation 
+* the disparity map was not sufficient to reconstruct the cave
+* used classic examples of disparity datasets to check fi 3D positions could be extracted with his workflow - it worked. 
+* facing issues to perform 3D reconstruction using classical methods
+* Found a Master's thesis that had the same problem (IR data ) - a method using 'phase congruency' seems to work rather well in edge and corner detection 
+* Disparity maps are built to build point clouds. 
+* 
