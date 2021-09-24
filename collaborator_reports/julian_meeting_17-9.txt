@@ -1,0 +1,12 @@
+Julian meeting 2021-09-17
+
+* Used the phase congruency method to find outlines and distinct points
+* used epipolar lines from camera calibraiton to find correspondences of points between camera views
+* finds matching points along the left wall - prob. because it's closest to the entrance - and there's more thermal variation? 
+* Finding regions that are common to all 3 cameras is useful to find very robust points 
+
+
+Also bring up the paragraph for the LiDAR-thermal alignment.
+
+* phase congruency approach, systematically train deep learning algorithms to generate depth maps - ie. generate aligned datasets. Placing markers in the cave 
+* 

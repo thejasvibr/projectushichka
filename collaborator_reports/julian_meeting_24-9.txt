@@ -1,0 +1,5 @@
+Julian meeting 2021-09-24
+
+* tried back-projection of LiDAR into the image, but this failed because
+there's no camera position information 
+* Manually found some correspondce between the cameras - but the 3D projections didn't match the expected points in the LiDAR exactly. However, it's still a start. 
