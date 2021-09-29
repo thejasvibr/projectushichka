@@ -1,0 +1,9 @@
+# Giray meeting 2021-09-28
+
+* Took break - and so situation is not very different from summer time meeting. 
+* Implemented Kalman filtering for 2D data
+* Also thinking of implementing more? prediction routines
+* Began working on the bird dataset from the Barn. 
+* Hemal will be back 15/10. 
+
+Deadlines: Feb 15 2022 the thesis report is due. 
