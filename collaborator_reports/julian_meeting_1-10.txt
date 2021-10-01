@@ -1,0 +1,9 @@
+Julian meeting 2021-10-01
+
+* JJ presented some initial camera alignments - very promising. 
+
+* The camera relative heights are okay, though there does seem to be some skew in the global positioning of the camera array. This may actually be a fixable problem using the manual microphone positions!!
+
+* Wanted some files without people in the data 
+	* needs some files with only the cave/ or a few bats at most
+	* MICROPHONE X-Y COORDINATES 
