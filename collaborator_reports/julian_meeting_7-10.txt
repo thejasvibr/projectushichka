@@ -1,0 +1,15 @@
+Julian meeting 2021-10-07
+
+* used the raw video without humans to generate
+common features
+* also took the microphone positions 
+on the cave wall and tried to register the 
+LiDAR
+* Even with the new microphone positions and the refined ICP feature matching of the cave surfaces the camera positions are still not as good as expected
+* The current alignment, even with 
+microphone points is not too perfect. The 3D points are aligned with the LiDAR surface, but the estimated camera positions are still off 
+* one option is to use stereo algorithms for thermal images 
+* The depth maps from the thermal images is relatively questionable 
+* BG suggests to use an iterative backprojection of the LiDAR into the thermal cameras - and see which camera positions generate the best fit - look at the kinect paper
+* JJ submission deadline is end of October 
+* 
