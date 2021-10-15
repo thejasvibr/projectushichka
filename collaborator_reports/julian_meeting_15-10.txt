@@ -1,0 +1,9 @@
+Julian meeting 2021-10-15
+
+* Did backprojection of the LiDAR mesh onto the thermal cameras
+* there were some fixed-pattern noise that 
+JJ discovered, and removing it helped a lot. Perhaps the fixed-pattern noise affected 
+even previous work? Vertical lines. 
+	* These vertical lines actually created 
+	a lot of false matches in the previous 
+* ?? the thermal camera 3D point projections and the LiDAR need a scaling factor of 1.5 to get them to match! --- where is this coming from? 
