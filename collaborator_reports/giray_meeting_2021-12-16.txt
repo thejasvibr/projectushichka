@@ -1,0 +1,29 @@
+Giray project meeting 2021-12-16 (Hemal, Giray, Thejasvi)
+
+* Started working with Starling data
+* Began working on Kalman filter in the tracking 
+and also with more objects (20 objects)
+* Achieved 100% matching with Kalman Filter(KF) 
+* Current implementation has 3D projection and verification with Kalman 
+happening serially (Kalman used to 'check' the 3D projection of
+a single matched pair)
+	* New suggestion is to keep all 'valid' pairs for each point, 
+	, store the pairs, and generate the 'best' 3D point. Run through
+	all frames and store the potential pairs + best 3D point. 
+	Then independently run a Kalman filter to verify the points into 
+	a trajectory, and if the 3D point is 'off' - then check for the 
+	alternate 3D projections for that point on that frame. 
+
+* Giray tried to run synthetic data using cameras with distortion
+and saw a weird unexplainable 7% drop in matching accuracy -- 
+we decided it's not worth going into. Let's assume the user provides
+undistorted x,y points (having done object tracking on undistorted
+images!!!!)
+* 
+
+
+? in the 20 object scenario -were all the objects in the scene all
+the time? -- yes, for now all the synthetic data is visible on 
+both cameras on all frames
+
+? What are Giray's timelines - submit by 1st week of Feb.
