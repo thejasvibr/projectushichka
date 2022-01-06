@@ -1,0 +1,8 @@
+Giray project meeting 2022-01-06 (Hemal, Giray, Thejasvi)
+
+* implemented forward-reverse Kalman filter 
+* Also did tests on gaussian noise with 3D points
+	* objects 'detected' on camera with a 3D position error inbuilt in them to generate non-linear 2D x,y positions 
+* Current implementation still follows the conservative - one-point-chosen with epipolar matching
+* next steps - applying the package on biological data and collective behaviour simulations. The particles in the synth data showed a random walk - and this might give the Kalman filter a tough time. In reality, biological trajectories are much smoother and more predictale. Perhaps the performance of the trajectory matcher with realistic data is actually much higher? 
+* Giray to share the code on Github and TB to check and coordinate w him on code docs and installation issues. 
