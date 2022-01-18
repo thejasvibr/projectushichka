@@ -1,0 +1,12 @@
+2022-01-18
+----------
+This sub-repo has a toy workflow on how to simulate sound propagation
+in Orlova Chuka using a smaller, simplified version of the 
+whole cave LiDAR scan. 
+
+In general, the idea is to load the mesh and then run the room simulation
+in ```pyroomacoustics```. 
+
+Right now the example STL file is 77 kB and is a massively simplified 
+representation of the original LiDAR scan. 
+
