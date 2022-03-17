@@ -127,3 +127,18 @@ b) 3D trajectory matching with only points and no 2D traj labels!
 * First meeting with Kalle:
 	* TB will upload the 10 nights of chirp playbacks along with laser-range finder data and original playback signal 
 	* plans to continue methods development and GUI postponed to later
+
+# End of Year 1: things achieved
+
+* 2D - 3D track2trajectory matching prototype achieved. Giray Tandogan wrote his Master's thesis on his solution for it. I am currently converting the code into a Python package, so far I've even managed to use easyWand based DLT coefficients in the workflow. 
+* Thermo-LiDAR alignment: Julian Jandeleit submitted his Bachelor's thesis showing how to get thermal camera pose in the LiDAR scan of the cave. Using the DLT coefficients of the cameras and finding corresponding point matches between the LiDAR and thermal views - he was able to place the cameras in the cave. Now I need to find a way to 'use' these results for 2018-08-17, and other days. 
+* beamshapes package accepted as a paper in the Journal of Open Source Software
+* DFG Benjamin Walter grant submitted, decision due early April 2022
+* Branco Weiss fellowship application submitted. Application did not make it through to next round. 
+* Uni Kon AFF Bridge Fellowship awarded for 3 months
+
+## What to do next: Bridge Fellowship and beyond 
+* See if there is more usable data from 2018-08-17- audio and video.
+* What are the bat numbers for 17th Aug?
+* 
+
