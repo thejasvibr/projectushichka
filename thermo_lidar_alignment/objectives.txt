@@ -1,0 +1,7 @@
+# Objectives of the thermo-lidar alignment folder
+
+* Julian's Bachelor thesis has a 'transformation' matrix which allows a conversion from the camera calibration space to the LiDAR space. 
+* If the transformation matrix is correct - the 3D coordinates of the microphones should coincide very well with the surface of the LiDAR scan. 
+* Here I will generate 3D coordinates for the microphones, transform them to
+LiDAR space, and then check how well they corroborate. 
+
