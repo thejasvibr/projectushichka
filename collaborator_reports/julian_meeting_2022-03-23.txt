@@ -1,0 +1,28 @@
+Meeting with Bastian, Julian and Thejasvi
+2022-03-23 -- didn't take place on 2022-03-18
+
+Things to discuss
+
+* Is it worth making this into a conference/journal paper? The dataset and its challenges are unique enough to warrant so I feel 
+* There's an issue of 8 pixels backprojection error - how could this be improved?
+	* Space carving approach - is it worth following up? 
+
+* GCPR deadline is 3rd June 2022 - is this
+	 too short for a submission
+	* with only the DMCP
+	* with DMCP and space carving approach 
+
+Discussion:
+
+* Space carving approach would take too much time,
+and also require more 'views' to generate sensible results
+* It would make sense to perform the camera pose reconstruction
+for multiple nights - also use microphone positions 
+* Julian also brought up something about the KITTI dataset
+
+Next meeting:
+* 2022-04-06 10:00 next meeting 
+* 2022-04-11 11:00 Julian's colloquium
+
+
+
