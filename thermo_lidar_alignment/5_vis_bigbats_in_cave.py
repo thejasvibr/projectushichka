@@ -49,8 +49,11 @@ mic_lidarv2 = [np.matmul(B, np.append(each,1))[:-1] for each in mic_lidar]
 print('...loading mesh data...')
 mesh = pv.read('data/lidar_roi.ply')
 print('...mesh data loaded...')
-plotter = pv.Plotter()
-plotter.add_mesh(mesh, show_edges=True, color=True)
+plotter = pv.Plotter(window_size=(640, 512))
+plotter.add_mesh(mesh, show_edges=False, color='tan')
+# light = pv.Light()
+# light.set_direction_angle(0, 0)
+# plotter.add_light(light)
 
 #%% Add the microphones as small spheres
 print('..adding bat traj points..')
@@ -103,12 +106,13 @@ plotter.track_click_position(callback)
 #k2_pos = (2.0402, -1.3384, -1.6065)
 plotter.camera.position = (6.04, -1.02, -0.57)
 plotter.camera.azimuth = -6
-plotter.camera.roll = -98
+plotter.camera.roll = -95
 plotter.camera.elevation = 0.5 #-15
 
 plotter.camera.view_angle = 45
 #plotter.camera.focal_point = (0.89,-0.51,-0.25)
 
+# plotter.show()
 
 #plotter.show()
 #%%
@@ -146,11 +150,16 @@ for frame in tqdm.trange(numframes):
             bat_spheres[batnum].translate(trans, inplace=True)
             positions[batnum] = subsubdf.loc[:,['x','y','z']]
     plotter.add_text(f"Time: {frame/25}", name='frame counter',
-                     position='upper_left', color='red')
-    plotter.add_text("Ushichka 2018-08-17 P000 15000 TMC", name='video-label', position='lower_right')
+                      position='upper_left', color='red', font_size=12)
+    plotter.add_text("Ushichka 2018-08-17 P000 15000 TMC", name='video-label', position='upper_right',
+                     font_size=14)
+    plotter.add_text('Ushichka homepage: https://thejasvibr.github.io/ushichka/', name='url-link', position='lower_left',
+                     font_size=14, color='white')
+    new_position = np.array(plotter.camera.position) + np.array([0.0015, 0.0015, 0.002])
+    plotter.camera.position = tuple(new_position)
+
     plotter.render()
     plotter.write_frame()  # Write this frame
-    #print(frame)
 
 plotter.close()
 
