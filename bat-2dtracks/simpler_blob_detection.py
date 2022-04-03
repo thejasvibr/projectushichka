@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Naive blob detection + regression to improve accuracy
------------------------------------------------------
-The inbuilt blob detection in sklearn is giving problem 
+Naive blob detection using connectivity only
+--------------------------------------------
+A simple blob detection method implemented only using connectivity
+after thresholding. 
 
 """
 
@@ -98,13 +99,14 @@ def place_bounding_box(image, rois):
 # pass the original OR binarised image through a mean/median filter to 
 # reduce the chance of such things happening?
 
+print('Finding blobs...')
 all_contours = []
 all_regions = []
 for each in tqdm.tqdm(frame_nums):
     tgt = cleaned_images[each]
     if invert:
         tgt = np.invert(tgt)
-    thresh = threshold_yen(tgt)
+    thresh = threshold_yen(tgt, nbins=100)
     binzd = tgt >thresh
     regions = measure.label(np.uint8(binzd),)
     contours = measure.find_contours(np.float32(binzd), 0.9)
@@ -119,11 +121,13 @@ for each in all_regions:
 
 #%%
 
+print('plotting detected blobs')
 
 plt.ioff()
 for idx,each in tqdm.tqdm(enumerate(substack)):
     
-    fig, ax = plt.subplots()
+    plt.figure(figsize=(8,4))
+    ax = plt.subplot(121)
     ax.imshow(each)
     
     for i,region in enumerate(msmts[idx]):
@@ -134,6 +138,8 @@ for idx,each in tqdm.tqdm(enumerate(substack)):
         ax.add_patch(rect)
         plt.text(minc, minr,str(i),
                      fontsize=7)
+    ax2 = plt.subplot(122)
+    plt.imshow(each)
     plt.savefig(f'{idx}_skimage.png')
     plt.close()
  
