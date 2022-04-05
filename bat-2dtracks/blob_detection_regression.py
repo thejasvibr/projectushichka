@@ -10,7 +10,12 @@ import glob
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
+import os
 import pandas as pd
+import sklearn
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import jaccard_score
+from sklearn.linear_model import LogisticRegression
 import skimage 
 from skimage import measure
 from skimage.filters import threshold_yen
@@ -18,7 +23,9 @@ import tqdm
 dB = lambda X: 20*np.log10(np.abs(X))
 #%%
 folder = 'blob_regression/images/'
-images = skimage.io.imread_collection(folder+'*.png')
+image_paths = glob.glob(folder+'*.png')
+images = [skimage.io.imread(each) for each in image_paths]
+#images = skimage.io.imread_collection(folder+'*.png')
 
 #%%
 
@@ -73,9 +80,18 @@ def plot_raw_blobs(image, blob_msmts, ioff=False):
         plt.text(minc, minr,str(i),
                      fontsize=10, color='w')
     ax2 = plt.subplot(122, sharex=ax, sharey=ax)
-    plt.imshow(image)
+    ax2.imshow(image)
 
+# if not os.path.exists('.\blobbed'):
+#     os.mkdir('blobbed')
 
+# plt.ioff()
+# for i, each in tqdm.tqdm(enumerate(images)):
+#     plot_raw_blobs(each, msmts[i])
+#     plt.savefig(f'blobbed\{i}_marked_blobs')
+# plt.ion()
+    
+    
 
 
 #%%
@@ -88,8 +104,8 @@ def plot_raw_blobs(image, blob_msmts, ioff=False):
 # Also mean region pixel value (sum pixels/num pixels) - rel the mean of the whole
 # image.(use msmt.coords to get all region pixels)
 
-
-input_data = pd.DataFrame(data={'file_name':[],
+def make_input_df():
+    input_data = pd.DataFrame(data={'file_name':[],
                                 'blob_label':[],
                                 'unique_label':[],
                                 'area':[],
@@ -97,5 +113,96 @@ input_data = pd.DataFrame(data={'file_name':[],
                                 'mean_re_image':[],
                                 'perimeter':[],
                                 'ecc':[]})
+    return input_data
 
-for input_image
+all_frame_msmts = []
+for i, input_image in tqdm.tqdm(enumerate(cleaned_images)):
+    one_frame_blobs = []
+    for props in msmts[i]:
+        props_df = pd.DataFrame()
+        props_df['file_name'] = [os.path.split(image_paths[i])[-1]]
+        props_df['blob_label'] = [props.label]
+        props_df['area'] = [props.area]
+        majoraxis = props.axis_major_length
+        minoraxis = props.axis_minor_length
+        props_df['majoraxis'] = [majoraxis]
+        props_df['minoraxis'] = [minoraxis]
+        try:
+            ratio = majoraxis/minoraxis
+        except:
+            ratio = 0
+        props_df['majorminor'] = [ratio]
+        xs, ys = props.coords[:,0], props.coords[:,1]
+        mean_intensity = np.mean(input_image[xs, ys])
+        props_df['mean_pixel'] = [mean_intensity]
+        props_df['sd_pixel'] = np.std(input_image[xs, ys])
+        props_df['sum_pix'] = np.sum(input_image[xs, ys])
+        props_df['mean_re_image'] = [mean_intensity/np.median(input_image)]
+        props_df['perimeter'] = [props.perimeter]
+        props_df['ecc'] = [props.eccentricity]
+        props_df['feret'] = [props.feret_diameter_max]
+        props_df['max'] = [np.max(input_image[xs,ys])]
+        props_df['min'] = [np.min(input_image[xs,ys])]
+
+        one_frame_blobs.append(props_df)
+    one_frame = pd.concat(one_frame_blobs).reset_index(drop=True)
+    all_frame_msmts.append(one_frame)
+all_blobs = pd.concat(all_frame_msmts).reset_index(drop=True)
+all_blobs['logsum_pix'] = np.log10(all_blobs['sum_pix'])
+all_blobs['bat'] = np.tile(0,all_blobs.shape[0])
+#%%
+# Manually mark out the valid ids for each frame as a dict
+# If two blobs are on the same bat - and both of them are equal size-ish, 
+# I'm choosing both.
+onlyfile = [os.path.split(each)[-1] for each in image_paths]
+bat_blobs = {}
+bat_blobs[onlyfile[0]] = [0, 6]
+bat_blobs[onlyfile[1]] = [0, 1, 2, 6]
+bat_blobs[onlyfile[2]] = [1,2,3,4,5,6,7]
+bat_blobs[onlyfile[3]] = [54, 55, 56, 58, 59, 60, 61, 67, 65]
+bat_blobs[onlyfile[4]] = [63, 67, 68, 69, 70, 64, 73, 74, ]
+bat_blobs[onlyfile[5]] = [0,1,5,2,6,7,13,4,8,12,9,10,11]
+bat_blobs[onlyfile[6]] = [64, 63, 65, 68, 73, 67, 76, 79, 80, 84, 71]
+bat_blobs[onlyfile[7]] = [50, 54, 53, 52, 55, 57]
+bat_blobs[onlyfile[8]] = [43, 46, 45, 47, 41, 44]
+bat_blobs[onlyfile[9]] = [37, 38, 43, 42, 40, 41, 44, 45, 39, 46]
+bat_blobs[onlyfile[10]] = [48, 54, 51, 53, 49, 52]
+bat_blobs[onlyfile[11]] = [60, 55, 65, 47, 48, 49]
+
+
+for file, bat_ids in bat_blobs.items():
+    rows_w_filename = all_blobs['file_name'] == file
+    for each in bat_ids:
+        rows_w_bloblabel = all_blobs['blob_label'] == each
+        valid_row = np.logical_and(rows_w_filename, rows_w_bloblabel)
+        all_blobs.loc[valid_row,'bat'] = 1
+
+
+#%%
+# Now let's perform some logistic regression to classify bat and non-bat
+# blobs
+xx = all_blobs.loc[:,['area','mean_re_image','logsum_pix','sd_pixel','feret']].to_numpy()
+yy = all_blobs['bat'].to_numpy()
+X_train, X_test, Y_train, Y_test = train_test_split(xx, yy,
+                                                    test_size=0.2,
+                                                    random_state=10)
+
+#%%
+logreg = LogisticRegression()
+logreg.fit(X_train, Y_train)
+
+Z = logreg.predict(X_test)
+
+match = jaccard_score(Y_test, Z)
+print(f'match: {match}')
+
+#%%
+wbat = all_blobs[all_blobs['bat']==1]
+wobat = all_blobs[all_blobs['bat']==0]
+
+
+plt.figure()
+colname = 'logsum_pix'
+plt.boxplot([wbat[colname], wobat[colname]])
+
+
