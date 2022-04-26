@@ -1,0 +1,27 @@
+Julian meeting 2022-04-26
+=========================
+* meeting to discuss
+	* manuscript progress
+	* GUI progress
+	* what computational experiments to run on the tool to show its accuracy/utility
+* Manuscript progress:
+	* Not much progress. 
+	* Thursday 28/4 morning sessiong with Julian to work on introduction. 
+* GUI progress 
+	* one tiny bug - could be fixed by next week. 
+* Computational experiments
+	Inputs:
+		* No need to make a new LiDAR mesh - just choose points that are stationary and don't change from night to night
+		* Thermal camera data :
+			* DLT coeffieicnts
+			* Set of videos for each video don't have people 
+			* JJ needs one image as a csv file for each camera on each 
+	Experiments:
+		* JJ will do all the experiments - playing around with the effect of main camera
+			* output 3 transformation matrices per night
+				* JJ will analyse 2D reprojection error
+				* TB will analyse microphone alignment error (raw and post-icp)
+		* For JJ's thesis, K2 used as the primary camera
+	Docs/Code:
+		* Code hosted at the ushichka project page: https://github.com/ushichka/dmcp
+		* ReadtheDocs
