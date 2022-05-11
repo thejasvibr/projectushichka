@@ -1,0 +1,22 @@
+Julian, Bastian, Thejasvi meeting 2022-05-10
+============================================
+
+* 7 nights analysed 
+* Some nights are 'okay', and some are *very* off. 
+* JJ checked did some investigation. 
+    * Maybe one possibility is that the 3D annotated
+points are all very planar and that's why there's a problem 
+    * BG wondered if it's a software bug - JJ says he
+checked his implementation with an existing one - so 
+doesn't think it's a problem with implementation. 
+    * JJ wonders if the intrinsics of the estimated 
+cameras is the problem. 
+* JJ didn't include undistortion - BG thinks it may play a role
+* JJ also thinks instead of a 3D interactive display, it may
+be better to just have a 2D RGB display of the LiDAR scene 
+next to the depth map. '
+
+Solutions:
+* Do the undistorting
+*                      
+Wednesday 10:00, Z building 7th floor, coffee kitchen 
