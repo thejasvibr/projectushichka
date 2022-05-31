@@ -4,15 +4,10 @@ Mic alignment: thermal-LiDAR
 ============================
 
 Some thoughts:
-    * Why even do ICP? In general, the challenge is really to get the coarse
-    alignment right in the first place.
     * It seems like the 3D alignment errors and 2D reprojection errors
     are rather correlated - does this make sense?
-    * ICP helps in some cases, but when the transformation is already off
-    it only puts a tiny band-aid on a bleed :p by pushing all points to 
-    any nearby mesh points.
-
-
+    * The transforms from diff cameras have points on slightly 'tilted'
+    planes
 @author: Thejasvi Beleyur
 Code released under MIT License
 """
@@ -44,7 +39,6 @@ points_distance_posticp= {}
 
 preicp_xyz_points = {}
 posticp_xyz_points = {}
-print(f'start time: {time.time()}')
 for each_night in experiment_nights:
     print(each_night)
     points_distance_preicp[each_night] = []
@@ -65,6 +59,7 @@ for each_night in experiment_nights:
     mic_xyzh = [np.append(each, 1) for each in mic_xyz]
     for each_camera_transmat in trans_mats[each_night]:
         print(each_camera_transmat)
+        st = time.time()
         A = pd.read_csv(each_camera_transmat, header=None).to_numpy()
         # Now move the mic from camera calibration space to LiDAR space.
         pre_post_dist, preposticp_xyz, icp_refine_transmat = run_pre_and_post_icp_steps(mic_xyzh,
@@ -76,8 +71,7 @@ for each_night in experiment_nights:
         preicp_xyz, posticp_xyz = preposticp_xyz
         preicp_xyz_points[each_night].append(preicp_xyz)
         posticp_xyz_points[each_night].append(posticp_xyz)
-        print(f'one evening end time: {time.time()}')
-print(f'end time: {time.time()}')
+        print(f'one evening one cam run time: {time.time()-st}')
 
 #%% 
 # Save all the   
@@ -118,7 +112,7 @@ num_entries = lambda X: len(X['value'][~np.isnan(X['value'])])
 # 2018-07-21\camera_1...]
 # corresponding to each of the mic/cave points on 2018-07-21
 
-plt.figure(figsize=(7,3))
+plt.figure(figsize=(7,3)) # width, height
 sns.stripplot(x='variable', y='value', data=preicp,  edgecolor='none', jitter=True,
               alpha=0.5, size=3)
 for i,med in enumerate(preicp_median):
@@ -160,21 +154,31 @@ plt.tight_layout()
 plt.savefig('posticp_meshdistances.png')
 
 #%%
-# Let's visualise the fit
+# TODO:
+# Get the mean XYZ from each of the transforms for 2018-08-17 and plot each point
+# in the mesh view.
 
+
+
+colour_set = ['orange','green','red']
+#for night, cavepts in preicp_xyz_points.items():
+night = list(preicp_xyz_points.keys())[7]
+cavepts = preicp_xyz_points[night]
 plotter = pv.Plotter()
-plotter.add_mesh(mesh, show_edges=True, color=True)
-
-for each in preicp_xyz_points['2018-07-21\\']:
-    for every in each:
-    plotter.add_mesh(pv.Sphere(radius=0.05, center=every))
-
-plotter.camera.position = (6.04, -1.02, -0.57)
-plotter.camera.azimuth = -6
-plotter.camera.roll = -98
-plotter.camera.elevation = 0.5 #-15
+plotter.add_mesh(mesh, show_edges=False, color=True, opacity=0.5)
+plotter.camera.position = (5.0, -1.02, -1)
+plotter.camera.azimuth = 5
+plotter.camera.roll = -90
+plotter.camera.elevation = 5 #-15
 plotter.camera.view_angle = 45
+for i, each in enumerate(cavepts):
+    for every in each:
+        plotter.add_mesh(pv.Sphere(radius=0.05, center=every),
+                                   color=colour_set[i])
+plotter.add_text('DMCP mic+cave points alignment '+night[:-1], 'lower_right')
+plotter.save_graphic(night[:-1]+'_cavepts.pdf')
 plotter.show()
+plotter.clear()
 
 #%% 
 # How far apart are the microphones when compared across the different cameras?
