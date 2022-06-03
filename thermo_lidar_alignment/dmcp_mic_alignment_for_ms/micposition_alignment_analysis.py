@@ -7,7 +7,8 @@ Some thoughts:
     * It seems like the 3D alignment errors and 2D reprojection errors
     are rather correlated - does this make sense?
     * The transforms from diff cameras have points on slightly 'tilted'
-    planes
+    planes - or on completely different planes. 
+
 @author: Thejasvi Beleyur
 Code released under MIT License
 """
@@ -101,6 +102,12 @@ posticp = pd.melt(posticp_dists)
 # calculate median distances
 preicp_median = preicp.groupby(by='variable').apply(np.nanmedian)
 posticp_median = posticp.groupby(by='variable').apply(np.nanmedian)
+
+#%%
+preicp['date'] = preicp['variable'].apply(lambda X: X[:10])
+ninety_pctile_distances = np.nanpercentile(preicp['value'], [2.5, 50, 90, 97.5])
+# date-wise stats
+preicp.groupby('date').apply(lambda X: np.nanpercentile(X['value'], [ 100]))
 #%%
 num_entries = lambda X: len(X['value'][~np.isnan(X['value'])])
 
@@ -130,7 +137,7 @@ for x, samplesize, night in zip(date_x, all_samplesizes, experiment_nights):
     plt.text(x, 1e-4, night[:-1]+f'\n({samplesize})', fontsize=9,
              multialignment='center')
 plt.tight_layout()
-plt.savefig('preicp_meshdistances.png')
+plt.savefig('preicp_meshdistances.eps')
 
 
 plt.figure(figsize=(7,3))
@@ -151,14 +158,12 @@ for x, samplesize, night in zip(date_x, all_samplesizes, experiment_nights):
     plt.text(x, 1e-4, night[:-1]+f'\n({samplesize})', fontsize=9,
              multialignment='center')
 plt.tight_layout()
-plt.savefig('posticp_meshdistances.png')
+plt.savefig('posticp_meshdistances.eps')
 
 #%%
 # TODO:
 # Get the mean XYZ from each of the transforms for 2018-08-17 and plot each point
 # in the mesh view.
-
-
 
 colour_set = ['orange','green','red']
 #for night, cavepts in preicp_xyz_points.items():
