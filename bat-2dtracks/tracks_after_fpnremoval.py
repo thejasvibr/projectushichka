@@ -18,6 +18,8 @@ and then performing blob detection helps a LOT!!!
 References
 ----------
 * Julian Jandeleit, Ushichka registration repo: https://gitlab.inf.uni-konstanz.de/julian.jandeleit/ushichka-registration
+
+Conda environment: ushichka
 """
 import cv2
 import glob
@@ -62,6 +64,8 @@ cleaned = remove_vert_horiz_lines(raw)
 
 plt.figure()
 plt.imshow(cleaned)
+plt.figure()
+plt.imshow(raw)
 
 #%% 
 # Run cleaning on all images
@@ -117,9 +121,12 @@ for i,each in tqdm.tqdm(enumerate(allblobs)):
 allblob_data = pd.concat(all_blob_data).reset_index(drop=True)
 
 #%% Link blob blocations into tracks
-linked = tp.link(allblob_data, search_range=30, memory=5)
-filt_linked = tp.filter_stubs(linked)
+linked = tp.link(allblob_data, search_range=35, memory=10)
+filt_linked = tp.filter_stubs(linked, threshold=3)
 by_pid = filt_linked.groupby('particle')
+
+plt.figure()
+tp.plot_traj(linked)
 
 #%%
 # Remove all tracks which are suspiciously stationary
@@ -142,13 +149,13 @@ for each in pids:
     filt_linked.loc[subdf_rows,'dist_travelled'] = distance
 
 #%%
-travel_threshold = 8
+travel_threshold = 2
 nonstat_tracks = filt_linked[filt_linked['dist_travelled']>travel_threshold].reset_index(drop=True)
 pids =  nonstat_tracks['particle'].unique()
 
 #%%
 # plot trajectories for frames 1:10
-max_frame_num = 99
+max_frame_num = 9
 plt.ion()
 plt.figure()
 plt.imshow(substack[max_frame_num][:,:,2])
