@@ -207,7 +207,6 @@ def subtract_background_ben(images, image_ind, background_sum):
     '''
     
     background = np.floor_divide(background_sum, images.shape[0])
-    print(f'background here is: {background}')
     
     # The order of subtraction means dark bats are now light in image_dif
     image_dif =  background - images[image_ind, :, :, 2]
@@ -280,7 +279,6 @@ def preprocess_to_binary(image, binary_thresh, background):
     threshold = np.where(threshold < min_difference, min_difference, threshold)
     
     binary_image = np.where(image < threshold, 0, 255)
-    print(f'Unique binary data: {np.unique(binary_image)}')
     return binary_image
 
 def get_blob_info(binary_image, background=None, size_threshold=0):
@@ -472,7 +470,6 @@ def process_frame(images, focal_frame_ind, bat_thresh, background_sum, bat_area_
 
     max_bats = 600
     mean = np.mean(images[focal_frame_ind, :, :, 2])
-    print(f'Image mean is: {mean}')
     #if mean < 35:
     #    max_bats = 200
     #if mean < 28:
@@ -490,7 +487,6 @@ def process_frame(images, focal_frame_ind, bat_thresh, background_sum, bat_area_
 
 
     image_dif, background = subtract_background(images, focal_frame_ind, background_sum)
-    print(f'background value: {background}')
     
     while True:
         binary_image = preprocess_to_binary(image_dif, bat_thresh, background)
