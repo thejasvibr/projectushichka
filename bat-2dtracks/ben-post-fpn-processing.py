@@ -29,8 +29,8 @@ from skimage.filters import rank
 from skimage.morphology import disk 
 
 #%%
-folder = '2018-08-17/K3/P001/png/'
-image_paths = glob.glob(folder+'*7000*.png')[:100]
+folder = '2018-08-17/K1/P001/png/'
+image_paths = glob.glob(folder+'*7000*.png')[:25]
 images = [skimage.io.imread(each) for each in image_paths]
 #images = skimage.io.imread_collection(folder+'*.png')
 
@@ -91,11 +91,13 @@ if not os.path.exists('ben_postfpn/'):
 for each in glob.glob('ben_postfpn/*'):
     os.remove(each)
 
-camera_id = 'K3'
+camera_id = folder.split('/')[1]
+if len(camera_id)<1:
+    raise ValueError('Invalid camera ID')
 image_files = natsort.natsorted(glob.glob('cleaned_imgs/cleaned*.png'))
 all_frame_data = []
 
-bat_thresh = 0.05
+bat_thresh = 0.07
 bat_area = 0.5
 print('Detecting bats .....')
 for focal_frame_ind,_ in tqdm.tqdm(enumerate(image_files)):
@@ -126,12 +128,12 @@ all_camera_data = all_camera_data.rename(columns={'frame_number':'frame', 'col_i
 #%%
 # Now use trackpy to get the 
 
-sr = 60; mem= 5;
-# tracks = tp.link(all_camera_data, search_range=sr,
-#                  memory=mem)
+sr =60; mem= 5;
+tracks = tp.link(all_camera_data, search_range=sr,
+                  memory=mem)
 
-pred = tp.predict.NearestVelocityPredict()
-tracks = pred.link_df(all_camera_data, sr)
+# pred = tp.predict.NearestVelocityPredict()
+# tracks = pred.link_df(all_camera_data, sr)
 
 #%%
 # No need to perform the nearest velocity predict - same/ext similar 
@@ -159,18 +161,18 @@ particles_byframe = all_camera_data.groupby(by='frame')
 
 print('plotting trailing trajectories...')
 max_pastframes = 5
-plt.figure()
+fig,a0 = plt.subplots()
 plt.ioff()
 for num, img in tqdm.tqdm(enumerate(cleaned_images)):
     thisframe = tracks[tracks['frame']==num+1]
     bats_thisframe = particles_byframe.get_group(num+1)
     tracks_subset = get_pastXframes(tracks, num+1,max_pastframes)
-    a0 = plt.subplot(111);
     plt.title(f'normal frame:{num}')
     tp.plot_traj(tracks_subset, superimpose=np.invert(cleaned_images[num]),
-                 label=True, fontsize=3)
+                  label=True, fontsize=3)
     plt.plot(bats_thisframe['x'],  bats_thisframe['y'], 'r+', markersize=0.75)
     plt.savefig(f'tracks_overlaid/overlaid_{num}.png')
+    fig.canvas.blit(a0.bbox)
     a0.cla()
 plt.close()
 
@@ -190,57 +192,61 @@ for num, img in tqdm.tqdm(enumerate(cleaned_images)):
     a0 = plt.subplot(121);
     plt.title(f'normal frame:{num}')
     tp.plot_traj(tracks_subset, superimpose=np.invert(cleaned_images[num]),
-                 label=True)
+                  label=True)
     a1= plt.subplot(122);
     plt.title('Only detected particles')
     plt.imshow(cleaned_images[num])
     a1.scatter(bats_thisframe['x'],  bats_thisframe['y'], s=50,facecolors='none',
-               edgecolors='r', linewidths=0.2
-             )
+                edgecolors='r', linewidths=0.2
+              )
 
+    x_disp, y_disp = np.random.choice([0,1,2],2)
     for i, row in thisframe.iterrows():
-        plt.text(row['x'], row['y'], row['particle'], fontsize=8)
+        plt.text(row['x']+x_disp, row['y']+y_disp, row['particle'], fontsize=7)
     
     plt.savefig(f'tracks_overlaid/tracks_particles_overlaid_{num}.png')
     a0.cla()
     a1.cla()
+    # fig.canvas.blit(a0.bbox)
+    # fig.canvas.blit(a1.bbox)
 plt.close()
 
 #%%
         
-plt.figure()
-a0 = plt.gca()
-tp.plot_traj(tracks, superimpose=inv_stack[-1,:,:,0], ax=a0,
-             label=True,  colorby='particle', fontsize=0.4, 
-             plot_style={'linewidth':0.5})
-plt.show()
+# plt.figure()
+# a0 = plt.gca()
+# tp.plot_traj(tracks, superimpose=inv_stack[-1,:,:,0], ax=a0,
+#              label=True,  colorby='particle', fontsize=0.4, 
+#              plot_style={'linewidth':0.5})
+# plt.show()
+# # #%%
+# all_particle_ids = tracks.groupby('particle').groups.keys()
+# tracks_grouped = tracks.groupby('particle')
+
+
+# plt.figure()
+# a0 = plt.subplot(111)
+# for particle in tqdm.tqdm(all_particle_ids):
+#     this_traj = tracks_grouped.get_group(particle)
+#     if not os.path.exists(f'particle_{particle}_track/'):
+#         os.mkdir(f'particle_{particle}_track/')
+#     for i, row in this_traj.iterrows():
+#         frame = row['frame']
+#         x,y = row['x'], row['y']
+#         traj_trail = get_pastXframes(this_traj, frame, 5)
+#         plt.title(f'particle ID : {particle}, frame: {frame}')
+#         a0.scatter(x,y, s=50, facecolors='none', edgecolors='r', linewidths=0.1)
+#         plt.plot(traj_trail['x'], traj_trail['y'], 'w', linewidth=0.5)
+#         plt.imshow(cleaned_images[frame-1])
+#         plt.savefig(f'particle_{particle}_track/particle_{particle}_frame-{frame}.png')
+#         a0.cla()
+# plt.close()
+
 #%%
-all_particle_ids = tracks.groupby('particle').groups.keys()
-tracks_grouped = tracks.groupby('particle')
+from matplotlib.widgets import RangeSlider, CheckButtons, Button
 
-
-plt.figure()
-a0 = plt.subplot(111)
-for particle in tqdm.tqdm(all_particle_ids):
-    this_traj = tracks_grouped.get_group(particle)
-    if not os.path.exists(f'particle_{particle}_track/'):
-        os.mkdir(f'particle_{particle}_track/')
-    for i, row in this_traj.iterrows():
-        frame = row['frame']
-        x,y = row['x'], row['y']
-        traj_trail = get_pastXframes(this_traj, frame, 5)
-        plt.title(f'particle ID : {particle}, frame: {frame}')
-        a0.scatter(x,y, s=50, facecolors='none', edgecolors='r', linewidths=0.1)
-        plt.plot(traj_trail['x'], traj_trail['y'], 'w', linewidth=0.5)
-        plt.imshow(cleaned_images[frame-1])
-        plt.savefig(f'particle_{particle}_track/particle_{particle}_frame-{frame}.png')
-        a0.cla()
-plt.close()
-
-#%%
-from matplotlib.widgets import RangeSlider, CheckButtons
-
-frames = range(len(cleaned_images))
+min_frame, max_frame = tracks['frame'].min(), tracks['frame'].max()
+frames = range(min_frame, max_frame+1)
 fig, a0 = plt.subplots()
 
 s1_ax = fig.add_axes([0.2,0.05,0.65,0.03])
@@ -248,13 +254,23 @@ minmax_frame = RangeSlider(ax=s1_ax, valmin=min(frames), valmax=max(frames),
                            label='start frame', valinit=(min(frames), max(frames)),
                            valstep=np.arange(min(frames),max(frames)+1))
 
+next_ax = fig.add_axes([0.1, 0.4, 0.1, 0.1])
+prev_ax = fig.add_axes([0.1, 0.6, 0.1, 0.1])
+nextbutton = Button(next_ax, 'Next')
+prevbutton = Button(prev_ax, 'Previous')
+
+
 trajs_ax = fig.add_axes([0.8, 0.1, 0.2, 0.85])
+
 all_particles = tracks['particle'].unique().tolist()
 traj_buttons = CheckButtons(ax= trajs_ax, labels=all_particles)
+for each in traj_buttons.rectangles:
+    each.set_height(each.get_height()*2)
+    each.set_width(each.get_width()*2)
 
 for r in traj_buttons.rectangles:
-    r.set_width(r.get_height()+0.01)
-    r.set_height(r.get_height()+0.01)
+    r.set_width(r.get_width()*1.5)
+    r.set_height(r.get_height()*1.5)
 
 
 for i,_ in enumerate(all_particles):
@@ -262,30 +278,45 @@ for i,_ in enumerate(all_particles):
 
 plt.sca(a0)
 plt.imshow(cleaned_images[-1])
-tp.plot_
+tp.plot_traj(tracks, label=True, ax=a0, superimpose=inv_stack[0,:,:,0])
+fig.canvas.blit(a0.bbox)
 def update(val):
     plt.sca(a0)
-    
-    print('hi')
+    fig.canvas.blit(a0.bbox)
     checked_particles = traj_buttons.get_status()
+    print('hi')
+    
     displayed_particles = []
     for active, particle in zip(checked_particles, all_particles):
         if active:
             displayed_particles.append(particle)
-
-    dataset = tracks[np.logical_and(tracks['frame']>=minmax_frame.val[0],
-                                    tracks['frame']<=minmax_frame.val[1])]
-    filt_dataset = dataset.loc[dataset['particle'].isin(displayed_particles)]
+    
     a0.cla()
-    for i, checked in enumerate(checked_particles):
-        if not checked:
-            print('NOT', all_particles[i])
+    try:
+        dataset = tracks[np.logical_and(tracks['frame']>=minmax_frame.val[0],
+                                        tracks['frame']<=minmax_frame.val[1])]
+        filt_dataset = dataset.loc[dataset['particle'].isin(displayed_particles)]
+        for i, checked in enumerate(checked_particles):
+            if not checked:
+                print('NOT', all_particles[i])
+        tp.plot_traj(filt_dataset, ax=a0, superimpose=inv_stack[int(minmax_frame.val[1])-1,:,:,2], 
+                     label=True)
+    except:
+        plt.title('ERROR')
 
-    tp.plot_traj(filt_dataset, ax=a0, superimpose=inv_stack[int(minmax_frame.val[1])-1,:,:,2], 
-                 label=True)
+def next_fun(ev):
+    if minmax_frame.val[1] <= max(frames):
+        minmax_frame.val[1] += 1
+    minmax_frame.set_val(minmax_frame.val)
+    update(ev)
 
+def prev_fun(ev):
+    if np.logical_and(minmax_frame.val[1]>=0, minmax_frame.val[1]>minmax_frame.val[0]):
+        minmax_frame.val[1] -= 1
+    minmax_frame.set_val(minmax_frame.val)
+    update(ev)
 minmax_frame.on_changed(update)
 traj_buttons.on_clicked(update)
-
-
+nextbutton.on_clicked(next_fun)
+prevbutton.on_clicked(prev_fun)
 plt.show()
