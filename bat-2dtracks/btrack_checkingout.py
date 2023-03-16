@@ -9,6 +9,11 @@ parameter. Otherwise - I'm very impressed. Tracking is fairly flawless without m
 problem. 
 
 
+Things to check while diagnosing a track (the `napari` package already does this - whew!!)
+> Plot track of interest in a diff color as the other detected tracks across frames
+> Check to see if there are any sudden jumps. 
+> Plot the tracks 
+
 """
 import glob
 import matplotlib.pyplot as plt
@@ -30,11 +35,11 @@ from skimage.filters import rank
 from skimage.morphology import disk 
 
 #%%
-folder = '2018-08-17/K2/P001/png/'
-image_paths = glob.glob(folder+'*7000*.png')[40:80]
+folder = '2018-08-17/K3/P001/png/'
+image_paths = glob.glob(folder+'*7000*.png')[:25]
 images = [skimage.io.imread(each) for each in image_paths]
 #images = skimage.io.imread_collection(folder+'*.png')
-
+camera_id = folder.split('/')[1]
 #%%
 
 def remove_vert_horiz_lines(image):
@@ -59,15 +64,15 @@ for each in tqdm.tqdm(images):
 
 minmax = [(np.min(X), np.max(X)) for X in cleaned_images]
 #%%
-if not os.path.exists('cleaned_imgs/'):
-    os.mkdir('cleaned_imgs')
+if not os.path.exists(f'cleaned_imgs/{camera_id}/'):
+    os.mkdir(f'cleaned_imgs/{camera_id}/')
 
 # check that cleaned_imgs is empty
-files = glob.glob('cleaned_imgs/*')
+files = glob.glob(f'cleaned_imgs/{camera_id}/*')
 for f in files:
     os.remove(f)
 
-footprint = disk(3)
+footprint = disk(2)
 
 inverted_images = []
 print('Inverting cleaned images')
@@ -81,41 +86,35 @@ for num, img in tqdm.tqdm(enumerate(cleaned_images)):
     # also smooth the images a bit - and check to see if it makes a difference
     
     inverted_images.append(inv_img)
-    skimage.io.imsave(f'cleaned_imgs/cleaned_{num}.png', inv_img)
+    skimage.io.imsave(f'cleaned_imgs/{camera_id}/cleaned_{num}.png', inv_img)
 inv_stack = np.array(inverted_images)
 
 
 #%%
 import btrack
-if not os.path.exists('btrack_segmentation/'):
-    os.mkdir('btrack_segmentation/')
-# make sure ben_postfpn is clean
-for each in glob.glob('btrack_segmentation/*'):
-    os.remove(each)
 
-camera_id = folder.split('/')[1]
 if len(camera_id)<1:
     raise ValueError('Invalid camera ID')
-image_files = natsort.natsorted(glob.glob('cleaned_imgs/cleaned*.png'))
+image_files = natsort.natsorted(glob.glob(f'cleaned_imgs/{camera_id}/cleaned*.png'))
 all_frame_data = []
 
 #%%
-if not os.path.exists('ben_postfpn/'):
-    os.mkdir('ben_postfpn/')
+if not os.path.exists(f'ben_postfpn/{camera_id}/'):
+    os.mkdir(f'ben_postfpn/{camera_id}/')
 # make sure ben_postfpn is clean
-for each in glob.glob('ben_postfpn/*'):
+for each in glob.glob(f'ben_postfpn/{camera_id}/*'):
     os.remove(each)
 
 camera_id = folder.split('/')[1]
 if len(camera_id)<1:
     raise ValueError('Invalid camera ID')
-image_files = natsort.natsorted(glob.glob('cleaned_imgs/cleaned*.png'))
+image_files = natsort.natsorted(glob.glob(f'cleaned_imgs/{camera_id}/cleaned*.png'))
 all_frame_data = []
 
 
 
 bat_thresh = 0.05
-bat_area = 0.075
+bat_area = 0.08
 print('Detecting bats .....')
 all_masks = []
 for focal_frame_ind,_ in tqdm.tqdm(enumerate(image_files)):
@@ -124,20 +123,24 @@ for focal_frame_ind,_ in tqdm.tqdm(enumerate(image_files)):
                                   focal_frame_ind)
     mask = output['binary']
     all_masks.append(mask)
+    plt.imsave(f'ben_postfpn/{camera_id}/{camera_id}_{focal_frame_ind}_mask.png', mask)
 
 bat_detection_masks = np.array(all_masks)
 #%%
-FEATURES = ('area','solidity')
+FEATURES = ('area','axis_major_length','axis_minor_length','orientation',
+            'solidity', 'eccentricity')
+
 objects  = btrack.utils.segmentation_to_objects(bat_detection_masks,
                                                 properties=FEATURES)    
 
 CONFIG_FILE =  datasets.cell_config()
+import napari
 
 with btrack.BayesianTracker() as tracker:
 
    # configure the tracker using a config file
     tracker.configure(CONFIG_FILE)
-    tracker.max_search_radius = 50
+    tracker.max_search_radius = 125
     tracker.tracking_updates = ["MOTION","VISUAL"]
     tracker.features = FEATURES
 
@@ -145,7 +148,7 @@ with btrack.BayesianTracker() as tracker:
     tracker.append(objects)
 
     # set the tracking volume
-    #tracker.volume=((0, 1600), (0, 1200))
+    tracker.volume=((0, 1600), (0, 1200))
 
     # track them (in interactive mode)
     tracker.track(step_size=25)
@@ -154,71 +157,33 @@ with btrack.BayesianTracker() as tracker:
     tracker.optimize()
 
     # get the tracks in a format for napari visualization
-    #data, properties, graph = tracker.to_napari()
+    data, properties, graph = tracker.to_napari()
     
     # store the tracks
     tracks = tracker.tracks
     
     # store the configuration
     cfg = tracker.configuration
-
 #%%
-from matplotlib.pyplot import cm
-big_tracks = [each for each in tracks if len(each.t)>1]
-color = cm.rainbow(np.linspace(0, 1, len(big_tracks)))
 
 
-plt.figure()
-plt.imshow(bat_detection_masks[0])
-for i, bat_track in enumerate(big_tracks):
-    plt.plot(bat_track.x, bat_track.y, c=color[i])
-    plt.text(bat_track.x[0]-10, bat_track.y[0]+10, bat_track.ID, fontdict={'color':'white'})
+viewer = napari.Viewer()
 
-#%%
-# Save tracks and load onto pandas dataframe 
-btrack.dataio.export_CSV('btrack_output.csv', tracks)
-track_data = pd.read_csv('btrack_output.csv', delimiter=' ', index_col=False)
+viewer.add_image(
+    np.array(cleaned_images), 
+    name="cleaned",
+    opacity=0.9,
+)
 
-fig, a0 = plt.subplots()
-by_frame = track_data.groupby('t')
-
-for i, _ in enumerate(image_paths):
-    plt.imshow(cleaned_images[i])
-    frame_data = by_frame.get_group(i)
-    if frame_data.shape[0]>0:
-        plt.scatter(frame_data['x'], frame_data['y'], s=50,facecolors='none',
-                    edgecolors='r', linewidths=0.2
-                  )
-    plt.savefig(f'particle_detections_frame_{i}.png')
-    a0.cla()
-plt.close()
-#%%
-# Save per trajectory
-
-
-fig, a0 = plt.subplots()
-by_frame = track_data.groupby('t')
-
-col_by_traj = cm.rainbow(np.linspace(0, 1, len(track_data['ID'].unique())))
-ids = track_data['ID'].unique()
-by_traj = track_data.groupby('ID')
-
-for i, _ in enumerate(image_paths):
-    plt.imshow(cleaned_images[i])
-    frame_data = by_frame.get_group(i)
-    if frame_data.shape[0]>0:
-        plt.scatter(frame_data['x'], frame_data['y'], s=50,facecolors='none',
-                    edgecolors='r', linewidths=0.2
-                  )
-        for j, row in frame_data.iterrows():
-            plt.text(row['x'], row['y'], str(int(row['ID'])), fontsize=10, color='w')
-        
-        for k, ID in enumerate(ids):
-            this_particle = by_traj.get_group(ID)
-            plt.plot(this_particle['x'], this_particle['y'], color=col_by_traj[k],
-                     linewidth=0.5, linestyle='--')
-            #plt.text(this_particle['x'])
-    plt.title(f'frame {i}')
-    plt.savefig(f'frame_{i}_detections.png')
-    a0.cla()
-plt.close()
+viewer.add_image(np.array(all_masks), 
+                 name='mask',
+                 opacity=0.2)
+# the track data from the tracker
+viewer.add_tracks(
+    data, 
+    properties=properties, 
+    name="Tracks", 
+    blending="translucent",
+)
+tracking_data = pd.DataFrame(data, columns=['id','frame','x','y'])
+tracking_data.to_csv(f'{camera_id}_first25_tracks.csv')

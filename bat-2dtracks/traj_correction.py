@@ -10,34 +10,43 @@ import pandas as pd
 import glob
 import numpy as np 
 import matplotlib
-import trackpy as tp
+import napari
+from skimage.io import ImageCollection
 #%% Load the 2D trajectories from each of the cameras
-linked_data = glob.glob('first*.csv')
+linked_data = glob.glob('K*.csv')
 cam_linked_data = {camid : pd.read_csv(linked) for camid, linked in zip(['K1','K2','K3'], linked_data) }
+
+#%% Convert DataFrame to napari track-format
+def conv_to_napari_track(df):
+    track_data = []
+    for i, row in df.iterrows():
+        track_data.append(row.loc['id':].to_numpy())
+    return track_data
 
 #%% 
 # Perform required manual corrections and then assign each trajectory a unique
 # ID
+k3_view = napari.Viewer()
+k3_masks = ImageCollection('ben_postfpn/K3/*.png', as_gray=True)
+k3_cleaned = ImageCollection('cleaned_imgs/K3/*.png', as_gray=True)
+k3_tracks = conv_to_napari_track(cam_linked_data['K3'])
 
-def correct_trajectory_labels(linked_trajs, traj_labels, action):
-    corrected = linked_trajs.copy()
-    if action == 'delete':
-        for each in traj_labels:
-            assert len(each)==1
-            linked_trajs = corrected[~corrected['particle']==each]
-    if action == 'fuse':
-        for each in traj_labels:
-            assert len(each)==2
-            relevant_rows = np.logical_or(corrected['particle']==each[0],
-                                          corrected['particle']==each[1])
-            corrected.loc[relevant_rows, 'particle']
-            
+k3_view.add_image(
+    np.array(k3_masks), 
+    name="mask",
+    opacity=0.9,
+)
 
-# For K3, delete trajectories 8,7,11,16,0,5 and fuse {3,10}, {1,12}
-
-k3_corrected = cam_linked_data['K3'].copy()
-k3_traj_delete = [7,8,11,16,0,5]
-k3_fuse = [(3,10), (1,12)]
+k3_view.add_image(
+    np.array(k3_cleaned), 
+    name="image",
+    opacity=0.9,
+)
+k3_view.add_tracks(
+    k3_tracks, 
+    name="Tracks", 
+    blending="translucent"
+)
 
 #%% 
 # Try to match the trajectories with each other by drawing the epipolar lines
