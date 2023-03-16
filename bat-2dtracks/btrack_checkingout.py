@@ -124,7 +124,7 @@ for focal_frame_ind,_ in tqdm.tqdm(enumerate(image_files)):
     mask = output['binary']
     all_masks.append(mask)
     plt.imsave(f'ben_postfpn/{camera_id}/{camera_id}_{focal_frame_ind}_mask.png', mask)
-
+    np.savetxt(f'ben_postfpn/{camera_id}/{camera_id}_{focal_frame_ind}_mask.csv', mask)
 bat_detection_masks = np.array(all_masks)
 #%%
 FEATURES = ('area','axis_major_length','axis_minor_length','orientation',
