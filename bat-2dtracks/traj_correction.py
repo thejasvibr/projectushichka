@@ -238,7 +238,6 @@ id45_frame21on = pd.DataFrame(data={'id':np.tile(45,3),
 
 corrected_k1 = pd.concat([corrected_k1,id6_frame18on,id45_frame21on]).reset_index(drop=True).loc[:, 'id':]
 
-#k1_ids_tokeep = 
 #%%
 
 k1_corr_view = napari.Viewer()
