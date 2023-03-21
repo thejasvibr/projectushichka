@@ -6,6 +6,12 @@ Since my initial attempts at automated trajectory matching with track2trajectory
 failed, I'm now being forced to try it out manually. This module creates a
 workflow for manual trajectory matching. 
 
+A mouse click on any one camera image generates the epipolar lines across the two
+other cameras.
+
+
+
+
 Attention
 ~~~~~~~~~
 The 2D tracking 'x' and 'y' are actually the row and column - these are therfore
@@ -141,9 +147,13 @@ def on_press(event):
     if event.key == 'n':
         fnum += 1 
     elif event.key == 'b':
-        fnum -= 1 
-    else:
-        a1.set_title(f'{event.key} is unrecognised - only n and b')
+        if fnum >=1:
+            fnum -= 1 
+        else:
+            pass
+    elif event.key == 'h':
+        fnum =  0 
+
     a0.cla()
     a1.cla()
     a2.cla()
@@ -160,36 +170,67 @@ def on_press(event):
         a1.figure.canvas.draw()
         a2.figure.canvas.draw()
     except:
-        a0.set_title(f'{fnum} is invalid - unable to plot')
-        a0.cla()
-        a0.cla()
+        a0.set_title(f'Frame number: {fnum} invalid')
+        pass
+        
 
 def on_click2(event):
-    if a0.in_axes(event):
-        u,v = event.xdata, event.ydata
-        # plot a cross on the 
-        
-        #    print(x,y)
-        m12 ,b12 = partialdlt(u, v, c1_dlt, c2_dlt)
-        m13 ,b13 = partialdlt(u, v, c1_dlt, c3_dlt)
-        x_lims = np.linspace(0, px*2, 10)
-        epi_line_y12  = m12*x_lims + b12
-        epi_line_y13  = m13*x_lims + b13
-        
-        for (each, every) in zip(a1.lines, a2.lines):
-            each.remove()
+    event_axes = [ax.in_axes(event) for ax in [a0, a1, a2]]
+    if sum(event_axes) == 0:
+        return None
+
+    for each in [a0.lines, a1.lines, a2.lines]:
+        for every in each:
             every.remove()
-        
-        # plot only line portion in the camera frame
-        valid_y = np.logical_and(epi_line_y12>=0, epi_line_y12 <=2*py)
-        a1.plot(x_lims[valid_y], epi_line_y12[valid_y], 'r', linewidth=0.5)
-        a1.figure.canvas.draw()
+
+    source_camera = int(np.argwhere(event_axes)) + 1 
+    print(f'Source camera is : {source_camera}')
+    if source_camera == 1:
+        C1 = c1_dlt.copy()
+        C2 = c2_dlt.copy()
+        C3 = c3_dlt.copy()
+        ax_source = a0 
+        ax_C2 = a1
+        ax_C3 = a2
+
+    elif source_camera == 2:
+        C1 = c2_dlt.copy()
+        C2 = c3_dlt.copy()
+        C3 = c1_dlt.copy()
+        ax_source = a1
+        ax_C2 = a2
+        ax_C3 = a0
+
+    elif source_camera == 3:
+        C1 = c3_dlt.copy()
+        C2 = c1_dlt.copy()
+        C3 = c2_dlt.copy()
+        ax_source = a2
+        ax_C2 = a0
+        ax_C3 = a1
+
+    ax_source.figure.canvas.draw()
+    ax_C2.figure.canvas.draw()
+    ax_C3.figure.canvas.draw()
     
-        valid_y = np.logical_and(epi_line_y13>=0, epi_line_y13 <=2*py)
-        a2.plot(x_lims[valid_y], epi_line_y13[valid_y], 'r',  linewidth=0.5)
-        a2.figure.canvas.draw()
-    else:
-        pass
+    
+    u,v = event.xdata, event.ydata
+    m12 ,b12 = partialdlt(u, v, C1, C2)
+    m13 ,b13 = partialdlt(u, v, C1, C3)
+    x_lims = np.linspace(0, px*2, 10)
+    epi_line_y12  = m12*x_lims + b12
+    epi_line_y13  = m13*x_lims + b13
+    
+
+    valid_y12 = np.logical_and(epi_line_y12>=0, epi_line_y12 <=2*py)
+    ax_C2.plot(x_lims[valid_y12], epi_line_y12[valid_y12], 'r', linewidth=0.5)
+    
+    
+    valid_y13 = np.logical_and(epi_line_y13>=0, epi_line_y13 <=2*py)
+    ax_C3.plot(x_lims[valid_y13], epi_line_y13[valid_y13], 'r', linewidth=0.5)
+    ax_source.figure.canvas.draw()
+    ax_C2.figure.canvas.draw()
+    ax_C3.figure.canvas.draw()
 
 fig.canvas.mpl_connect('button_press_event', on_click2)
 fig.canvas.mpl_connect('key_press_event', on_press)
@@ -204,17 +245,76 @@ label_detections(0)
 
 #%%
 c1_ids = c1_tracks_botleft['oid'].unique()
-c1_ids_corresp = pd.DataFrame(data={'c1_oid': ['k1_1.0', 'k1_2.0', 'k1_6.0', 'k1_19.0', 'k1_26.0', 'k1_27.0',
-                                               'k1_45.0', 'k1_34.0'],
-                                    'c2_oid': ['k2_1.0', 'k2_2.0', 'k2_3.0', 'k2_6.0',  'k2_8.0', 'k2_5.0',
-                                               'k2_11.0', np.nan],
-                                    'c3_oid': ['k2_4.0', 'k3_5.0',  np.nan,    'k3_41.0', 'k3_36.0', 'k3_21.0',
-                                               'k3_43.0', np.nan]})
+cam_corresps =   pd.DataFrame(data={'c1_oid': ['k1_1.0', 'k1_2.0', 'k1_6.0',
+                                               'k1_19.0', 'k1_26.0', 'k1_27.0',
+                                               'k1_45.0', 'k1_34.0', np.nan,
+                                               np.nan,    np.nan   , np.nan,
+                                               np.nan,    np.nan],
+                                    'c2_oid': ['k2_1.0', 'k2_2.0', 'k2_4.0',
+                                               'k2_6.0',  'k2_8.0', 'k2_5.0',
+                                               'k2_11.0', np.nan, 'k2_10.0',
+                                               'k2_15.0', 'k2_16.0', 'k2_3.0',
+                                               'k2_12.0', 'k2_17.0'],
+                                    'c3_oid': ['k3_4.0', 'k3_5.0',  np.nan,
+                                               'k3_41.0', 'k3_36.0', 'k3_21.0',
+                                               'k3_43.0', np.nan, np.nan,
+                                               'k3_44.0', np.nan , np.nan,
+                                               np.nan   , np.nan]})
+def fuse_point_ids(correspondences):
+    '''
+    Parameters
+    ----------
+    correspondences: pd.DataFrame
+        With columns 'c1_oid, c2_oid, c3_oid'
+
+    Returns 
+    -------
+    with_fusedid: pd.DataFrame
+        Copy of correspondences with a new column holding the 
+        fused-point IDs. The fused-IDs are just the c1,2,3 object
+        ids separted by an underscore ('_')
+    '''
+    with_fusedid = correspondences.copy()
+    with_fusedid['fused_id'] = with_fusedid['c1_oid'].astype(str) + '_'+ with_fusedid['c2_oid'].astype(str) + '_' + with_fusedid['c3_oid'].astype(str)
+    return with_fusedid
 
 # check to see if there are some other correspondences to be made. 
-set(c2_tracks_botleft['oid'].unique())
+c2_notmatched = set(c2_tracks_botleft['oid'].unique()) - set(cam_corresps['c2_oid'])
+c3_notmatched = set(c3_tracks_botleft['oid'].unique()) - set(cam_corresps['c3_oid'])
+
+c2_tracks_botleft.groupby('oid').get_group('k2_17.0')
+c3_tracks_botleft.groupby('oid').get_group('k3_4.0')
+
+#%% 
+# Assign new point ids to the old ids
+matched_ids = fuse_point_ids(cam_corresps)
+
+def assign_new_point_id(matched_ids, cam_df):
+    '''
+    Parameters
+    ----------
+    matched_ids : pd.DataFrame
+        With at least there columns: c1_oid, c2_oid, c3_oid, fused_id
+    cam_df : pd.DAtaFrame
+        With at least these columns: oid, frame, x, y, cid
+        Where oid is object id and cid is camera id
+    
+    Returns 
+    -------
+    pd.Series?
+    '''
+    df_copy = cam_df.copy()
+    df_copy['point_id'] = df_copy['oid'].copy()
+    # replace the oid with the fused id
+    for i, row in df_copy.iterrows():
+        matched_ids_rowcol = np.argwhere((matched_ids == row['oid']).to_numpy()).flatten()
+        matched_ids_row = matched_ids_rowcol[0]
+        df_copy.loc[i,'point_id'] = matched_ids.loc[matched_ids_row, 'fused_id']
+    return df_copy
 
 
-
-
-
+cam1_points = assign_new_point_id(matched_ids, c1_tracks_botleft)
+cam2_points = assign_new_point_id(matched_ids, c2_tracks_botleft)
+cam3_points = assign_new_point_id(matched_ids, c3_tracks_botleft)
+all_cam_points = pd.concat([cam1_points, cam2_points, cam3_points]).reset_index(drop=True)
+all_cam_points.to_csv('matched_2018-08-17_P01_7000_first25frames.csv')
