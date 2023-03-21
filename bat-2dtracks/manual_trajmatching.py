@@ -17,6 +17,9 @@ Attention
 The 2D tracking 'x' and 'y' are actually the row and column - these are therfore
 switched in this module!
 
+Previously run module
+~~~~~~~~~~~~~~~~~~~~~
+traj_correction.py
 
 Environment to activate: tproject
 
@@ -275,7 +278,7 @@ def fuse_point_ids(correspondences):
         ids separted by an underscore ('_')
     '''
     with_fusedid = correspondences.copy()
-    with_fusedid['fused_id'] = with_fusedid['c1_oid'].astype(str) + '_'+ with_fusedid['c2_oid'].astype(str) + '_' + with_fusedid['c3_oid'].astype(str)
+    with_fusedid['fused_id'] = with_fusedid['c1_oid'].astype(str) + '-'+ with_fusedid['c2_oid'].astype(str) + '-' + with_fusedid['c3_oid'].astype(str)
     return with_fusedid
 
 # check to see if there are some other correspondences to be made. 
