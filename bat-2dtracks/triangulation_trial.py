@@ -10,9 +10,11 @@ Previously run module
 manual_trajmatching.py
 
 """
+import matplotlib.pyplot as plt
 import pandas as pd
+import pyvista as pv
 import numpy as np 
-
+#%%
 cam_data = pd.read_csv('matched_2018-08-17_P01_7000_first25frames.csv')
 dlt_coefs = pd.read_csv('2018-08-17/2018-08-17_wand_dltCoefs_round4.csv', header=None).to_numpy()
 c1_dlt, c2_dlt, c3_dlt  = [dlt_coefs[:,i] for i in range(3)]
@@ -88,4 +90,45 @@ triangulated = pd.DataFrame(data={'framenum': framenums,
                                   'x': xdata,
                                   'y': ydata,
                                   'z': zdata})
+
+#%%
+# Plot the data and see if it all makes sense
+fig, a9 = plt.subplots()
+a9 = plt.subplot(111, projection='3d')
+for pointid, sub_df in triangulated.groupby('point_id'):
+    plt.plot(sub_df['x'], sub_df['y'], sub_df['z'], '*')
+    last_xyz = [sub_df.loc[sub_df.index[0],axis] for axis in ['x','y','z']]
+    text_colo = a9.lines[-1].get_c()
+    a9.text(last_xyz[0],last_xyz[1],last_xyz[2], pointid, fontsize=5, color=text_colo)
+
+#%% Convert the dataframe into a numpy array for matrix manipulations 
+# Assign numeric keycodes to the various point-ids
+point_xyz = triangulated.loc[:,['x','y','z']].to_numpy().T
+point_xyz = np.row_stack((point_xyz, np.tile(1, point_xyz.shape[1])))
+numeric_ids, _ = pd.factorize(triangulated['point_id'])
+
+#%% Now align the points to the cave LiDAR system and see if the trajectories make sense
+# contextually. We can then go back and make corrections. 
+lidar_data = pv.read('../thermo_lidar_alignment/data/lidar_roi.ply')
+
+
+# This is the transformation matrix for 2018-08-17 from Julian's thesis. 
+A = np.array(([-0.7533, 0.6353, -0.1699, -1.7994],
+              [-0.6575, -0.7332, 0.1734, 1.7945],
+              [-0.0144, 0.2424, 0.9701, 0.2003]))
+# Bring the 3d points in camera frame to LiDAR frame. 
+points_lidarframe = np.apply_along_axis(lambda X: np.matmul(A, X), 0, point_xyz).T
+
+plotter = pv.Plotter()
+plotter.add_mesh(lidar_data, show_edges=True, color=True)
+camera_pos = (2.86, -1.71, -1.69)
+
+plotter.camera.position = camera_pos
+for each in points_lidarframe:
+    plotter.add_mesh(pv.Sphere(radius=0.05, center=each))
+    
+
+plotter.show()
+
+
 
