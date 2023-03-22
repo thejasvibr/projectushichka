@@ -20,7 +20,8 @@ number between 0-8191 that keeps running when the camera is active. 8192 frames 
     start and end at +/- 1 frame difference at most. I'm guessing the frame counter starts from
     the time the 25 Hz signal is given. Since the 25 Hz sync signal is always given simultaneously
     across the cameras -this is a very powerful cue for me to ues!!
-    
+5) The timestamp in the audio-file is the END time of the recording. 
+
 Related module
 ~~~~~~~~~~~~~~
 bat-2dtracks/btrack_checkingout.py
@@ -28,11 +29,34 @@ bat-2dtracks/manual_trajmatching.py
 bat-2dtracks/traj_correction.py
 bat-2dtracks/triangulation_trial.py
 """
+import glob
+import numpy as np
+import pandas as pd 
+import soundfile as sf
 
 #%% Use the previously generated meta-data only files to access # frames in all
 # TMC files. 
+all_csvfiles = glob.glob('2018-08-17_video_meta/K1/P000/*.csv') + glob.glob('2018-08-17_video_meta/K1/P0001/*.csv')
+
+total_frames = [pd.read_csv(each, delimiter=';').shape[0] for each in all_csvfiles]
 
 
 #%% Get an estimate of the total audio recording time in the first session. 
 
+audio_filefolder = 'E:/fieldword_2018_002/actrackdata/wav/2018-08-17_001/'
+audio_files_raw = glob.glob(audio_filefolder+'*.wav')
+# Remove the last file in the audio folder - as it's from the early morning at ~4 am. 
+audio_files = list(filter(lambda X: 'MULTIWAV_2018-08-18_04-35-55_1534556155.WAV' not in X, audio_files_raw))
+durations = [sf.info(each).duration for each in audio_files]
 
+print(f'Total audio recording duration {sum(durations)} s ')
+
+#%% Also get the time-gaps between recording ends. First parse the audio-file timestamps out. 
+posix_times = np.array([each.split('_')[-1][:-4] for each in audio_files], dtype=np.int64)
+end_gaps = np.diff(posix_times)
+
+#%%
+# I think what may be informative is not only the end-to-end timestamp gaps, but
+# also the derivative of the end_gaps! The audio recording time-stamps also include
+# maybe a few seconds of delay caused by de-queueing and saving a large >=12 channels
+# audio file at one go on my field-laptop. 
