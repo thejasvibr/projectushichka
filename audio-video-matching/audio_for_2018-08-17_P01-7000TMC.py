@@ -30,9 +30,12 @@ bat-2dtracks/traj_correction.py
 bat-2dtracks/triangulation_trial.py
 """
 import glob
+import matplotlib.pyplot as plt 
+plt.rcParams['agg.path.chunksize'] = 100000
 import numpy as np
 import pandas as pd 
 import soundfile as sf
+import scipy.ndimage as ndi
 
 #%% Use the previously generated meta-data only files to access # frames in all
 # TMC files. 
@@ -84,4 +87,20 @@ match_index_start = np.where(np.array(match_array)==0)[0]
 # In summary the audio file for 2018-08-17/P01/7000.TMC is the audio with timestamp
 # 1534537686 - recorded at 23:28:06. The other corresponding files are also given here. 
 
-#%% Load the matched audio file and check to see how 
+#%% Load the matched audio file and check to see how many video frames have audio data
+
+target_audio = list(filter(lambda X: '1534537686' in X, audio_files))[0]
+
+rec, fs  = sf.read(target_audio)
+sync_channel = rec[:,23]
+#%%
+plt.figure()
+plt.plot(sync_channel)
+
+#%% Now segment out the +ve portions of the sync channel, and count the # of segments
+frame_triggers = sync_channel.copy()
+frame_triggers -= np.mean(frame_triggers)
+frame_triggers /= np.max(frame_triggers)
+frames = frame_triggers>0.1
+frame_labels, num_frames = ndi.label(frames)
+print(f'Num frames with audio data: {num_frames}')
