@@ -1,0 +1,102 @@
+Finding audio-video matches in the face of discontinuous video recordings
+=========================================================================
+This document will give a quick overview of how to match audio and video recordings. 
+
+
+Last modified: 2023-03-23, Thejasvi Beleyur
+
+
+Audio is king - always saved reliably
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The multichannel audio was always saved reliably as the data was saved on the laptop. The Python 
+code ran reliably and never really had any software/hardware issues (there were issues with 
+microphones and audio-interface channels not getting saved). This means if there are for e.g. 200 
+audio recordings in a session - there were 200 triggers. 
+
+Audio timestamp has its own quirk
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The timestamp in the audio-files is *not* the time the recording was started! It is actually 
+the last timestamp before the audio data is saved to file - meaning it includes the potential
+delays from emptying the Python Queue object, array concatenation, and so on!
+
+
+Video data is finicky - lost frames and multiples files per trigger
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The reliability of the TeAx Thermalcapture 2.0 seemed to rely on having sufficient 
+(external) battery voltage to run the devices - which couldn't always be ensured all through the night
+over the course of the field season. The slowly depleting battery voltage sometimes meant that 
+the 20 kHz would come through to initiate the recording - but perhaps didn't maintain the required
+signal level consistently enough - leading to multiple videos being created for one trigger. 
+
+Video data with GPS timestamps - things to check
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+When the TMC files have the UTC timestamps - finding the match is easy as the audio and video timestamps
+should correspond fairly well. However, one thing to consider is that the field laptop was set to Germany
+time for a while over the field season, and then changed to Bulgarian time in the middle. If there appears to
+be a ~ 1 hour difference between the audio and video timestmaps - this is an explanation, and something to 
+be accounted for. 
+
+Checking for missing frames in video data when GPS timestamps are not there
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In the ideal case, all TMC files have frames with UTC timestamps - facilitated by the GPS unit attachment 
+to the 'black box' control unit. However, the GPS unit needed to be placed in the open where it could 
+receive the satellite transmission about once a week or so. This could not always be ensured, and sometimes 
+the GPS unit wasn't even attached to the box over the course of equipment setup. Not having the time stamps 
+means the actual time-stamps can't be directly compared with the audio-file timestamps!
+
+Without UTC timestamps on each frame - the frame number counter comes to the rescue. 
+I'm currently using ThermoViewer 2.1.6 - which has a panel on the right showing the meta-data (Date, Time, Lat, Long,..etc.). 
+The 'Frame number' is an extremely useful meta-data to use to figure what has been happening. The frame-number is a rolling 
+count that ranges from 0-8191 (when the frame-number exceeds 8191, it resets to 0). At 25 Hz, the 8192 frame range corresponds
+to ~ 5 mins 28 secs. When bat activity is high - the roll-over duration of ~5 mins is nice because recordings are typically 
+triggered < 2 mins apart, meaning that we can confidently tell when frame skips occured, and identify the point of the rollover
+to calculate time-gaps between recordings. 
+
+For example, if the end of the file 1000.TMC has frame number 200, and the next file's last frame has frame-number 5000, we know 
+there are 4800 frames in between - meaning, the files were triggered 192 seconds apart (at 25 Hz).
+
+Sometimes a single trigger leads to 2 TMC files with frame drops in between. This is easily diagnosed as the last frame of
+the previous TMC doesn't increase by 1. 
+
+
+Inter-trigger audio time delays don't always match the inter-trigger video time delays
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Because the audio timestamp also includes computer hardware delays - the inter-recording delay
+from audio and video need not match exactly, and can be different by a 1-3 seconds. For example it may be that the 
+inter-recording delay taken from two audio files is 3 seconds (using the POSIX timestamps). However
+using the last frame's frame-number across two TMC files, it may be that the delay was just 1 second!
+This is somewhat expected thanks to the quirk in audio-file timestamping. 
+
+
+Use inter-trigger delay derivative as well as actual recording duration 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Randomness generates unique patterns - and we can exploit this to our advantage. There are two 
+features that vary randomly across a session 1) recording duration and 2) trigger time.
+
+Recording duration typically varied between 15-15.08 seconds based on how the audio-interface and hardware delays 
+interacted with each other. This meant when the duration of recordings can be so : [15.04, 15.04, 15.08, 15.0, 15.08]. 
+The video recordings also have the same number of corresponding frames - for the audio-files above, we expect the following
+frame counts: [376, 376, 377, 375, 377]. 
+
+The inter-trigger delays don't necessarily match as explained above, but what will match is the derivative of the 
+inter-trigger delays!
+For example let's assume the audio timestamps are so:
+	[1000, 1090, 1190, 1200]
+The audio inter-trigger delay will then be:
+	[90, 100, 10].
+
+Without the GPS UTC timestamps we only have the inter-trigger delays. Converting the # of frame to seconds, let's say we recover:
+	[85, 95, 5]
+
+The inter-trigger time delays don't match, which can be a bit confusing, however what will match is the *inter-trigger derivative*:
+From both audio and video we will recover: 
+	[10, -5]
+
+The  inter-trigger derivative series can be used for template-matching with the video/audio file subset of interest - followed by careful
+checking of audio+video recording durations. 
+
+
+
+
+
+

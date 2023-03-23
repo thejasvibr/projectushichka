@@ -54,9 +54,34 @@ print(f'Total audio recording duration {sum(durations)} s ')
 #%% Also get the time-gaps between recording ends. First parse the audio-file timestamps out. 
 posix_times = np.array([each.split('_')[-1][:-4] for each in audio_files], dtype=np.int64)
 end_gaps = np.diff(posix_times)
+deriv_gaps = np.diff(end_gaps)
+
+template = np.array([-4, -5, 3, -1])
+match_array = []
+for i, each in enumerate(deriv_gaps):
+    try:
+        sub_array = deriv_gaps[i:i+template.size]
+        match = np.sqrt(np.sum((template-sub_array)**2))
+        match_array.append(match)
+    except:
+        pass
+match_index_start = np.where(np.array(match_array)==0)[0]
+
+# TMC 7000 corresponds to the last index in the derivative of end - gaps which 
+# means here it is the 6th file from the pattern's start. The audio durations and 
+# frame numbers of the tMC files also match. 
 
 #%%
-# I think what may be informative is not only the end-to-end timestamp gaps, but
-# also the derivative of the end_gaps! The audio recording time-stamps also include
-# maybe a few seconds of delay caused by de-queueing and saving a large >=12 channels
-# audio file at one go on my field-laptop. 
+# | Audio file timestamp | Audio duration (s) |Corresp candidate video file | Video duration(s) |
+# |----------------------|--------------------|-----------------------------|-------------------|
+# |     1534537235       |        15.04       |            1000.TMC         |     15.04         |
+# |     1534537328       |        15.04       |            2000.TMC         |     15.04         |
+# |     1534537416       |        15.08       |            3000.TMC         |     15.08         |
+# |     1534537507       |        15.0        | 4000+5000 w 7 frames missing| 15.0 with missing |
+# |     1534537597       |        15.08       |            6000.TMC         |     15.08         |
+# |     1534537686       |        15.04       |            7000.TMC         |     15.04         |
+#
+# In summary the audio file for 2018-08-17/P01/7000.TMC is the audio with timestamp
+# 1534537686 - recorded at 23:28:06. The other corresponding files are also given here. 
+
+#%% Load the matched audio file and check to see how 
