@@ -88,14 +88,18 @@ playback_file = 'SPKRPLAYBACK_multichirp_2018-08-18_09-15-06.WAV'
 fs = 192000
 audio, fs = sf.read(os.path.join(audio_folder, playback_file), stop=6*fs)
 #%%
-first_frame = audio_handling.first_frame_index(audio[:,7])
 # get the first video frame, and keep only audio from there on. 
+first_frame = audio_handling.first_frame_index(audio[:,7])
 
 plt.figure()
 plt.plot(audio[:384000,7])
 plt.plot(first_frame, audio[first_frame,7], 'r*')
-sanken_audio = audio[:,8:12] # load the SANKEN mics on the tristar array frame. 
-
+#%%
+# The 9 chirps are emitted at the source with 200 ms gap. The sound ends at the 200 ms
+# window. 
+sanken_audio = audio[first_frame:,8:12] # load the SANKEN mics on the tristar array frame. 
+plt.figure()
+plt.specgram(sanken_audio[:,0], Fs=fs)
 
 
 
