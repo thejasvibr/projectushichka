@@ -32,6 +32,7 @@ sys.path.append('../../ushichka_tools/')
 import scipy.signal as signal 
 import audio_handling
 from localisation_code import localisation_mpr2003 as lmpr
+import tqdm
 #%% Load the 3D video trajectories 
 vid_3d_file = glob.glob('../2018-08-17/speaker_playbacks/*xyzpts*.csv')[0]
 vid_3d = pd.read_csv(vid_3d_file)
@@ -47,7 +48,8 @@ plt.plot(vid_3d['x'], vid_3d['y'], vid_3d['z'], '*')
 
 #%% interpolate the ~0.5 s interval digitised xyz coordinates to 25 Hz. 
 cubic_interp = {axis: interpolate.CubicSpline(vid_3d.loc[:,'t'], vid_3d.loc[:, axis], ) for axis in ['x','y','z']}
-new_t = np.arange(0, max(vid_3d['t'])+0.005, 0.005)
+t_step = 0.002
+new_t = np.arange(0, max(vid_3d['t'])+t_step, t_step)
 time_interp_xyz = pd.DataFrame(data= {axis: cubic_interp[axis](new_t) for axis in ['x', 'y', 'z']})
 time_interp_xyz['t'] = new_t
 
@@ -119,14 +121,14 @@ plt.specgram(sanken_audio[:,0], Fs=fs)
 #%% 
 # Using time-of-flight to access audio in the relevant recording portion. 
 # We need to calculate emission time starting from 0.18 seconds because
-emission_time = 0.180
+emission_time = 0.180-0.006
 tof_pbk0 = tracking_data.loc[(tracking_data.t_interp-emission_time).abs().idxmin(),:]
 
 #%%
 # When does the first playback arrive at mic0?
 
 b,a = signal.butter(4, 40000/fs, 'highpass')
-first_pbk = sanken_audio[slice(int((emission_time-0.005)*fs), int((emission_time+0.025)*fs)),:]
+first_pbk = sanken_audio[slice(int((emission_time)*fs), int((emission_time+0.025)*fs)),:]
 first_pbk = np.apply_along_axis(lambda X: signal.filtfilt(b,a,X), 0, first_pbk)
 
 crosscor = [signal.correlate(first_pbk[:,ch1], first_pbk[:,ch0]) for (ch1,ch0) in [(1,0), (2,0), (3,0)]]
@@ -143,7 +145,6 @@ sound_source = lmpr.mellen_pachter_raquet_2003(sankens, np.array(all_tde)*vsound
 prob_source = sound_source[0]
 # what is the array-source distance based on acoustic localisation
 source_array_dists = spatial.distance_matrix(prob_source.reshape(-1,3), sankens)
-
 
 #%%
 mic_toas = [emission_time+tof_pbk0[f'tof{each}'] for each in range(4)]
@@ -250,21 +251,130 @@ relative_error = field_n_cam_difference/field_measurements
 # is a useful reference point, and allows comparison for the only-sankens acoustic
 # tracking. 
 
-tench_snkn9_origin = np.row_stack((tench_xyz[6,:], tench_xyz[[0,1,2,3,4,5,7,8],:]))
+tench_snkn9_origin = np.row_stack((tench_xyz[6,:], tench_xyz[[0,1,2,3,4,5,7,8,9],:]))
 tench_speaker_distances ={i: (spatial.distance_matrix(tench_snkn9_origin[i,:].reshape(-1,3), time_interp_xyz.loc[:,:'z'])).flatten() for i in range(tench_snkn9_origin.shape[0])}
 tench_rangdiff_m0 = [tench_speaker_distances[i]-tench_speaker_distances[0] for i in range(1,tench_snkn9_origin.shape[0])] # mic2mic distances, re mic0
 tench_snkn9_tde = pd.DataFrame(data=np.array(tench_rangdiff_m0).T/vsound)
 tench_snkn9_tde['t'] = new_t
+tench_snkn9_tde.columns = list(range(1,10)) + ['t']
 tench_snkn9_tof =  pd.DataFrame(data=tench_speaker_distances)/vsound
 tench_snkn9_tof['t'] = new_t
 
 # Also alter audio data to sanken9 as first channel. 
-tench_snkn9_audio = np.column_stack((tench_audio[:,6], tench_audio[:,[0,1,2,3,4,5,7,8,9]]))
+tench_snkn9_audio = np.column_stack((tench_audio[:,6], tench_audio[:,[0,1,2,3,4,5,7,8,9]], audio[first_frame:, 7]))
+sf.write('frame-synced_multichirp_2018-08-18_09-15-06_spkrplayback_ff802_10mic_snkn9_origin.wav', tench_snkn9_audio, fs)
+tench_snkn9_df = pd.DataFrame(tench_snkn9_origin, columns=['x','y','z'])
+tench_snkn9_df['mic_id'] = ['sanken9', 'smp1', 'smp2', 'smp3', 'smp4', 'smp5', 
+                            'smp6', 'sanken10', 'sanken11', 'sanken12']
+tench_snkn9_df.to_csv('2018-08-17_ff802_10mic_xyz.csv')
+#%%
+# Designing the acoustic tracking workflow
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# 
 
+# playbacks time occur every 200 s and then followed by a 1 second
+t_em = np.arange(0.18,5,0.2)-0.024
+clip_durn = 0.024 # choose the longest emission time
+exp_toa = []
 
+for t in t_em:
+    tofs = tench_snkn9_tof.loc[abs(tench_snkn9_tof['t']-t).idxmin(),:9]
+    toa_window = np.int64(np.array((t+tofs, t+tofs+clip_durn))*fs)
+    exp_toa.append(toa_window) 
+#%%
+pbk = 7
+_, a0 = plt.subplots()
+a00 = plt.subplot(911)
+plt.specgram(tench_snkn9_audio[exp_toa[pbk][0,0]:exp_toa[pbk][1,0],0], Fs=fs)
+for ch, ii in enumerate(range(912, 920)):
+    plt.subplot(ii, sharex=a00)
+    plt.specgram(tench_snkn9_audio[exp_toa[pbk][0,ch]:exp_toa[pbk][1,ch],ch], Fs=fs)
 
+#%% The playbacks line up: microphone IDs have been assigned correctly
+#   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# When the corresponding start and end times of audio across channels are 
+# extracted, then the playbacks line-up, meaning their arrival times have
+# been estimated correctly! 
+tof_audio_clips = [tench_snkn9_audio[exp_toa[pbk][0,ch]:exp_toa[pbk][1,ch],ch] for ch in range(10)]
+delay_peaks = np.array([np.argmax(signal.correlate(tof_audio_clips[i], tof_audio_clips[0])) for i in range(1,10)])
+exp_peak = tof_audio_clips[0].size
+diff_peaks = (exp_peak - delay_peaks)/fs
+# plt.figure()
+# plt.plot(signal.correlate(audio_clips[1], audio_clips[0]))
+# plt.vlines(audio_clips[0].size, 0, 0.05, 'r')
 
+#%% Using predicted TOF, TOA and TDE to check for call emission at video xyz
+#   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+b, a = signal.butter(2, 10000/fs, 'highpass')
+tench_snkn9_audio_hp = np.apply_along_axis(lambda X: signal.filtfilt(b,a,X), 0, 
+                                           tench_snkn9_audio)
+channel_pairs = [(i,0) for i in range(1,10)]
+normaliser = lambda X: X/np.abs(X.max())
+inter_peak_distance_s = 5e-4
+inter_peak_distance = int(inter_peak_distance_s*fs)
+tde_tolerance = 90e-6
+
+potential_emission_ti = []
+crosscorrs_ti = {}
+obs_tdes_ti = {}
+for t_i in tqdm.tqdm(new_t[new_t<4.5]):
+    tof_ti = tench_snkn9_tof[tench_snkn9_tof['t']==t_i]
+    tof_ti = tof_ti[tof_ti.columns.drop('t')]
+    toa_ti = t_i + tof_ti 
+    tde_ti = tench_snkn9_tde[tench_snkn9_tde['t']==t_i]
+    tde_ti = tde_ti[tde_ti.columns.drop('t')]
+    
+    toa_minmax = np.percentile(toa_ti, [0,100])
+    min_ind, max_ind = np.int64(toa_minmax*fs)
+    audio_minmax = tench_snkn9_audio_hp[min_ind:max_ind,:]
+    
+    crosscorrs = {}
+    obs_tdes_ti[t_i] = {}
+    pairs_w_matching_tdes = 0
+    for (chb,cha) in channel_pairs:
+        chb_norm, cha_norm = normaliser(audio_minmax[:,chb]), normaliser(audio_minmax[:,cha])
+        crosscorrs[(chb, cha)] = signal.correlate(chb_norm, cha_norm) 
+        crosscorr_peaks = signal.find_peaks(crosscorrs[(chb, cha)], height=5,
+                                            distance=inter_peak_distance)
+        crosscor_tde = (crosscorr_peaks[0] - audio_minmax.shape[0])/fs
+        obs_tdes_ti[t_i][(chb,cha)] = crosscor_tde
+        # check if there is a tde that is ~ that predicted
+        try:
+            residual = abs(crosscor_tde - tde_ti[chb].to_numpy())
+            #print(f'min residual {chb, cha}, t_i: {t_i} - {np.min(residual)}')
+            if np.sum(residual<=tde_tolerance)>0:
+                pairs_w_matching_tdes += 1 
+        except:
+            pass
+    if pairs_w_matching_tdes >= 4:
+        potential_emission_ti.append(t_i)
+                
+    
+    # plt.figure()
+    # plt.plot(crosscorrs[(chb, cha)])
+    # plt.plot(crosscorr_peaks[0], crosscorr_peaks[1]['peak_heights'],'r*')
+
+    crosscorrs_ti[t_i] = crosscorrs
+    
+#%%
+presence = []
+for each in new_t[new_t<4.5]:
+    if each in potential_emission_ti:
+        presence.append(1)
+    else:
+        presence.append(0)
+#%%
+t_emissions = np.arange(0.18, 1.8+0.18, 0.2)
+plt.figure()
+plt.plot(new_t[new_t<4.5], presence)
+for i in range(8):
+    if i>0:
+        new_tem_start = t_emissions[-1]+0.4
+        end_tem_start = new_tem_start+0.18
+        t_emissions = np.arange(new_tem_start, end_tem_start, 0.2)
+    plt.vlines(t_emissions, 0, 1,'r')
+    
 
 
 
