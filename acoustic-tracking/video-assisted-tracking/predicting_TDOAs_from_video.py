@@ -17,7 +17,40 @@ designed such that it is at the end of a 200 ms audio window. i.e. for the 5 ms
 durations, there is a silence of 195 ms, and for the 20 ms sounds - there is a 
 silence of 180 ms. 
 
+After a set of 9-chirps there is then a 200 ms window of silence, followed
+by the next set of 9 chirps. Essentially - one set of 9 playbacks is 2 seconds
+long (9chirps (1.8 s)  + 0.2 s silence). The first set of 9-chirps and silence
+is however 1.78 (20 ms cut-out from before the 1st frame) + 0.2 s long, then followed by the standard
+1.8 s playbacks + silence. 
 
+Summary of investigation: likely to fail for multi-bat audio (2023-03-29)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The idea of using video positions to predict possible TOAs and TDEs seems appealing
+until I realised that I will always find what I'm looking for! For example, the
+video xyz at `t0` will generate a predictions for time-of-flights, time-of-arrivals, and 
+time-difference-estimates at the microphones. I can use these to cut-out the relevant audio segments
+and run cross-correlations. In the obtained cross-correlation peaks I can then filter
+out the observed TDEs that match the predictions. This is where the problem lies!
+With sufficient channels and peaks - I will always be able to find some peaks
+that 'match' the predictions to an acceptable tolerance...!! 
+
+The problem of generally "finding what I'm looking for" means that there are a lot
+of false positives - and this is likely going to add more manual verification steps
+than actually saving time. 
+
+One possible solution is to only cross-correlate the audio-channels that have
+sufficient signal (energy) in them - to avoid random cross-correlation peaks. However
+this is not a real solution when there will be multiple bats - and the audio is
+filled with echolocation calls!
+
+What next? Pydatemm and co.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The naive video-assisted tracking I've implemented is not too useful for the multi-bat
+case. I therefore think the only way forward is to use audio-only tracking algorithms
+ - and then use the video as a 'backup' to see if the acoustic tracking makes sense. 
+
+
+Author: Thejasvi Beleyur
 """
 import glob
 import matplotlib.pyplot as plt 
@@ -32,6 +65,7 @@ sys.path.append('../../ushichka_tools/')
 import scipy.signal as signal 
 import audio_handling
 from localisation_code import localisation_mpr2003 as lmpr
+from localisation_code import tdoa_residual as tdoa_check
 import tqdm
 #%% Load the 3D video trajectories 
 vid_3d_file = glob.glob('../2018-08-17/speaker_playbacks/*xyzpts*.csv')[0]
@@ -52,6 +86,7 @@ t_step = 0.002
 new_t = np.arange(0, max(vid_3d['t'])+t_step, t_step)
 time_interp_xyz = pd.DataFrame(data= {axis: cubic_interp[axis](new_t) for axis in ['x', 'y', 'z']})
 time_interp_xyz['t'] = new_t
+timeinterpxyz_by_t = time_interp_xyz.groupby('t')
 
 plt.figure()
 a1 = plt.subplot(111, projection='3d')
@@ -305,24 +340,33 @@ diff_peaks = (exp_peak - delay_peaks)/fs
 
 #%% Using predicted TOF, TOA and TDE to check for call emission at video xyz
 #   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+euclidean = spatial.distance.euclidean 
 
-b, a = signal.butter(2, 10000/fs, 'highpass')
+b, a = signal.butter(2, 20000/fs, 'highpass')
 tench_snkn9_audio_hp = np.apply_along_axis(lambda X: signal.filtfilt(b,a,X), 0, 
                                            tench_snkn9_audio)
 channel_pairs = [(i,0) for i in range(1,10)]
 normaliser = lambda X: X/np.abs(X.max())
-inter_peak_distance_s = 5e-4
+inter_peak_distance_s = 3e-4
 inter_peak_distance = int(inter_peak_distance_s*fs)
 tde_tolerance = 90e-6
 
 potential_emission_ti = []
+presence = []
 crosscorrs_ti = {}
 obs_tdes_ti = {}
-for t_i in tqdm.tqdm(new_t[new_t<4.5]):
-    tof_ti = tench_snkn9_tof[tench_snkn9_tof['t']==t_i]
+tof_by_ti = tench_snkn9_tof.groupby('t')
+tde_by_ti = tench_snkn9_tde.groupby('t')
+
+tracking_error_tolerance = 0.3
+t_audio_max = 2.0
+
+tdoa_resids = []
+for t_i in tqdm.tqdm(new_t[new_t<t_audio_max]):
+    tof_ti = tof_by_ti.get_group(t_i)
     tof_ti = tof_ti[tof_ti.columns.drop('t')]
     toa_ti = t_i + tof_ti 
-    tde_ti = tench_snkn9_tde[tench_snkn9_tde['t']==t_i]
+    tde_ti = tde_by_ti.get_group(t_i)
     tde_ti = tde_ti[tde_ti.columns.drop('t')]
     
     toa_minmax = np.percentile(toa_ti, [0,100])
@@ -332,55 +376,79 @@ for t_i in tqdm.tqdm(new_t[new_t<4.5]):
     crosscorrs = {}
     obs_tdes_ti[t_i] = {}
     pairs_w_matching_tdes = 0
+    good_tdes = {}
     for (chb,cha) in channel_pairs:
         chb_norm, cha_norm = normaliser(audio_minmax[:,chb]), normaliser(audio_minmax[:,cha])
-        crosscorrs[(chb, cha)] = signal.correlate(chb_norm, cha_norm) 
-        crosscorr_peaks = signal.find_peaks(crosscorrs[(chb, cha)], height=5,
+        crosscorrs[(chb, cha)] = signal.correlate(chb_norm, cha_norm, method='fft') 
+        crosscorr_peaks = signal.find_peaks(crosscorrs[(chb, cha)], height=10,
                                             distance=inter_peak_distance)
         crosscor_tde = (crosscorr_peaks[0] - audio_minmax.shape[0])/fs
         obs_tdes_ti[t_i][(chb,cha)] = crosscor_tde
         # check if there is a tde that is ~ that predicted
-        try:
-            residual = abs(crosscor_tde - tde_ti[chb].to_numpy())
-            #print(f'min residual {chb, cha}, t_i: {t_i} - {np.min(residual)}')
-            if np.sum(residual<=tde_tolerance)>0:
-                pairs_w_matching_tdes += 1 
-        except:
-            pass
-    if pairs_w_matching_tdes >= 4:
-        potential_emission_ti.append(t_i)
-                
-    
-    # plt.figure()
-    # plt.plot(crosscorrs[(chb, cha)])
-    # plt.plot(crosscorr_peaks[0], crosscorr_peaks[1]['peak_heights'],'r*')
 
-    crosscorrs_ti[t_i] = crosscorrs
-    
-#%%
-presence = []
-for each in new_t[new_t<4.5]:
-    if each in potential_emission_ti:
+        residual = abs(crosscor_tde - tde_ti[chb].to_numpy())
+        
+        #print(f'min residual {chb, cha}, t_i: {t_i} - {np.min(residual)}')
+        if np.sum(residual<=tde_tolerance)>0:
+            best_tde = crosscor_tde[np.argmin(residual)]
+            good_tdes[chb] = best_tde
+            pairs_w_matching_tdes += 1 
+        
+    if len(good_tdes)>=4:
+        # get mic indices
+        mic_inds = list(good_tdes.keys())
+        m0_rel_tdes = np.array(list(good_tdes.values()))
+        mic_xyz = np.row_stack((tench_snkn9_origin[0,:], tench_snkn9_origin[mic_inds,:]))
+        # try localising and check the source positions obtained. 
+        rangediff = m0_rel_tdes*vsound
+        source_estimate = lmpr.mellen_pachter_raquet_2003(mic_xyz,
+                                                           rangediff)
+        
+        try:
+            source_estimate = source_estimate.reshape(-1,3)
+        except:
+            pass  
+
+        video_xyz = timeinterpxyz_by_t.get_group(t_i).loc[:,'x':'z']
+        if source_estimate.shape==0:
+            camera_tracking_error = np.inf
+            tdoa_residual = np.inf
+        elif np.logical_and(source_estimate.shape[0]<2, source_estimate.shape[0]>0):
+            camera_mic_tracking_error = euclidean(source_estimate, video_xyz)   
+            tdoa_residual = tdoa_check.residual_tdoa_error_nongraph(rangediff,
+                                                                    source_estimate,
+                                                                    mic_xyz,
+                                                                    c=vsound)
+        elif source_estimate.shape[0]==2:
+            camera_mic_tracking_errors =[ euclidean(source_estimate[i,:], video_xyz) for i in range(2)]
+            camera_mic_tracking_error = np.min(camera_mic_tracking_errors)
+            closer_source_estimate = source_estimate[np.argmin(camera_mic_tracking_errors),:]
+            tdoa_residual = tdoa_check.residual_tdoa_error_nongraph(rangediff,
+                                                                    closer_source_estimate,
+                                                                    mic_xyz,
+                                                                    c=vsound)
+
+    if camera_mic_tracking_error <= tracking_error_tolerance:
         presence.append(1)
     else:
         presence.append(0)
+    tdoa_resids.append(tdoa_residual)
+
+    crosscorrs_ti[t_i] = crosscorrs
+
 #%%
+
 t_emissions = np.arange(0.18, 1.8+0.18, 0.2)
 plt.figure()
-plt.plot(new_t[new_t<4.5], presence)
-for i in range(8):
+plt.plot(new_t[new_t<t_audio_max], presence)
+for i in range(1):
     if i>0:
         new_tem_start = t_emissions[-1]+0.4
-        end_tem_start = new_tem_start+0.18
-        t_emissions = np.arange(new_tem_start, end_tem_start, 0.2)
+        end_tem_start = new_tem_start+1.8
+        t_emissions = np.arange(new_tem_start, end_tem_start+0.2, 0.2)
     plt.vlines(t_emissions, 0, 1,'r')
-    
 
-
-
-
-
-
-
-
+#%%
+plt.figure()
+plt.plot(new_t[new_t<t_audio_max], tdoa_resids)
 
