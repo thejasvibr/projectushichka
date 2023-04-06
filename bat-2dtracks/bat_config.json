@@ -1,0 +1,68 @@
+{
+  "TrackerConfig":
+    {
+      "MotionModel":
+        {
+          "name": "bat_motion",
+          "dt": 1.0,
+          "measurements": 3,
+          "states": 6,
+          "accuracy": 7.5,
+          "prob_not_assign": 1e-9,
+          "max_lost": 10,
+          "A": {
+            "matrix": [1,0,0,1,0,0,
+                       0,1,0,0,1,0,
+                       0,0,1,0,0,1,
+                       0,0,0,1,0,0,
+                       0,0,0,0,1,0,
+                       0,0,0,0,0,1]
+          },
+          "H": {
+            "matrix": [1,0,0,0,0,0,
+                       0,1,0,0,0,0,
+                       0,0,1,0,0,0]
+          },
+          "P": {
+            "sigma": 150.0,
+            "matrix": [0.1,0,0,0,0,0,
+                       0,0.1,0,0,0,0,
+                       0,0,0.1,0,0,0,
+                       0,0,0,1,0,0,
+                       0,0,0,0,1,0,
+                       0,0,0,0,0,1]
+          },
+          "G": {
+            "sigma": 15.0,
+            "matrix": [0.5,0.5,0.5,1,1,1]
+
+          },
+          "R": {
+            "sigma": 5.0,
+            "matrix": [1,0,0,
+                       0,1,0,
+                       0,0,1]
+          }
+        },
+      "ObjectModel":
+        {},
+      "HypothesisModel":
+        {
+          "name": "bat_hypothesis",
+          "hypotheses": ["P_FP", "P_init", "P_term", "P_link", "P_branch", "P_dead"],
+          "lambda_time": 1.0,
+          "lambda_dist": 1.0,
+          "lambda_link": 500.0,
+          "lambda_branch": 1.0,
+          "eta": 1e-10,
+          "theta_dist": 0.0,
+          "theta_time": 0.0,
+          "dist_thresh": 100,
+          "time_thresh": 20,
+          "apop_thresh": 10,
+          "segmentation_miss_rate": 1e-10,
+          "apoptosis_rate": 0.00,
+          "relax": true
+        }
+    }
+}

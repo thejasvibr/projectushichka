@@ -22,7 +22,7 @@ import scipy.ndimage as ndi
 import matplotlib.pyplot as plt 
 import tqdm
 #%% Load the 2D trajectories from each of the cameras
-linked_data = glob.glob('K*.csv')
+linked_data = glob.glob('K*tracks_first*.csv')
 cam_linked_data = {camid : pd.read_csv(linked) for camid, linked in zip(['K1','K2','K3'], linked_data) }
 
 #%% Convert DataFrame to napari track-format
@@ -39,7 +39,7 @@ def conv_to_napari_track(df):
 # ID
 k3_view = napari.Viewer()
 k3_masks = [np.loadtxt(each, dtype='int8') for each in natsort.natsorted(glob.glob('ben_postfpn/K3/*.csv'))]
-k3_cleaned = np.array(ImageCollection('cleaned_imgs/K3/*.png')[:25])[:,:,:,0]
+k3_cleaned = np.array(ImageCollection('cleaned_imgs/K3/*.png')[:25])
 k3_tracks = conv_to_napari_track(cam_linked_data['K3'])
 
 k3_view.add_image(

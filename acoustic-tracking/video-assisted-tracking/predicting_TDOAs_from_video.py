@@ -338,6 +338,16 @@ diff_peaks = (exp_peak - delay_peaks)/fs
 # plt.plot(signal.correlate(audio_clips[1], audio_clips[0]))
 # plt.vlines(audio_clips[0].size, 0, 0.05, 'r')
 
+def choose_topX_peakinds(peaks_object, topX=5):
+    '''Input is a signal.find_peaks object
+    Output is the indices of the top X peaks.
+    '''
+    indices, peaks = peaks_object
+    sort_inds = np.argsort(peaks['peak_heights'])[::-1] # in descending order
+
+    return indices[sort_inds[:topX]]
+
+
 #%% Using predicted TOF, TOA and TDE to check for call emission at video xyz
 #   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 euclidean = spatial.distance.euclidean 
@@ -358,7 +368,7 @@ obs_tdes_ti = {}
 tof_by_ti = tench_snkn9_tof.groupby('t')
 tde_by_ti = tench_snkn9_tde.groupby('t')
 
-tracking_error_tolerance = 0.3
+tracking_error_tolerance = 0.5
 t_audio_max = 2.0
 
 tdoa_resids = []
@@ -382,7 +392,8 @@ for t_i in tqdm.tqdm(new_t[new_t<t_audio_max]):
         crosscorrs[(chb, cha)] = signal.correlate(chb_norm, cha_norm, method='fft') 
         crosscorr_peaks = signal.find_peaks(crosscorrs[(chb, cha)], height=10,
                                             distance=inter_peak_distance)
-        crosscor_tde = (crosscorr_peaks[0] - audio_minmax.shape[0])/fs
+        top_peaks = choose_topX_peakinds(crosscorr_peaks, topX=5)
+        crosscor_tde = (top_peaks - audio_minmax.shape[0])/fs
         obs_tdes_ti[t_i][(chb,cha)] = crosscor_tde
         # check if there is a tde that is ~ that predicted
 
