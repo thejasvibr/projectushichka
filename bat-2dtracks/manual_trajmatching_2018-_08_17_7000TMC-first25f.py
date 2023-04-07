@@ -27,27 +27,16 @@ Created on Mon Mar 20 13:20:38 2023
 """
 
 # -*- coding: utf-8 -*-
-
+import glob
 import matplotlib.pyplot as plt
+import natsort
 import numpy as np
 import pandas as pd
-#%% Load the camera 2D points
-all_cam_2d = pd.read_csv('all_camera_tracks_2018-08-17_P01_7000_first25frames.csv').loc[:,'id':]
-all_cam_2d.columns = ['oid', 'frame', 'x', 'y', 'cid']
-c1_tracks = all_cam_2d[all_cam_2d['cid']=='K1'].reset_index(drop=True)
-c2_tracks = all_cam_2d[all_cam_2d['cid']=='K2'].reset_index(drop=True)
-c3_tracks = all_cam_2d[all_cam_2d['cid']=='K3'].reset_index(drop=True)
 
-# IMPORTANT - this is NOT actually x,y - but row, col
-c1_2d = c1_tracks.loc[:,['x','y']].to_numpy() 
-c2_2d = c2_tracks.loc[:,['x','y']].to_numpy()
-c3_2d = c3_tracks.loc[:,['x','y']].to_numpy() 
-
-#Load the dlt coefficients - and infer the Projection matrix. We already
-# know the intrinsic matrix (common to all cameras)
-
+#%%
+# Camera intrinsics
 # camera image is 640 x 512
-px,py = 320, 256
+px,py = 320, 256 # x,y image centers
 fx, fy = 526, 526 # in pixels
 
 Kteax = np.array([[fx, 0, px],
@@ -57,34 +46,51 @@ Kteax = np.array([[fx, 0, px],
 p1, p2 = np.float32([0,0]) # tangential distortion
 k1, k2, k3 = np.float32([-0.3069, 0.1134, 0]) # radial distortion
 dist_coefs = np.array([k1, k2, p1, p2, k3]) #in the opencv format
-# Shift the origin from top left to lower left OTHERWISE THE DLT COEFS DONT MAKE SENSE
-c1_2d[:,0] = py*2 - c1_2d[:,0] 
-c2_2d[:,0] = py*2 - c2_2d[:,0]
-c3_2d[:,0] = py*2 - c3_2d[:,0]
 
-c1_tracks_botleft = c1_tracks.copy()
-c1_tracks_botleft['x'] = c1_2d[:,1]
-c1_tracks_botleft['y'] = c1_2d[:,0]
-c1_tracks_botleft['oid'] = 'k1_'+c1_tracks_botleft['oid'].astype(str) 
+dlt_coefs = pd.read_csv('2018-08-17/2018-08-17_wand_dltCoefs_round4.csv', header=None).to_numpy()
+
+P1 = np.append(dlt_coefs[:,0], [1]).reshape(3,4)
+P2 = np.append(dlt_coefs[:,1], [1]).reshape(3,4)
+P3 = np.append(dlt_coefs[:,2], [1]).reshape(3,4)
+
+#%% Load the camera 2D points
+all_cam_2d = pd.read_csv('all_camera_tracks_2018-08-17_P01_7000_first25frames.csv').loc[:,'id':]
+#all_cam_2d.columns = ['id', 'frame', 'row', 'col', 'cid']
+c1_tracks = all_cam_2d[all_cam_2d['camera']=='K1'].reset_index(drop=True)
+c2_tracks = all_cam_2d[all_cam_2d['camera']=='K2'].reset_index(drop=True)
+c3_tracks = all_cam_2d[all_cam_2d['camera']=='K3'].reset_index(drop=True)
+
+# Flip the columns - as we need the data to be in x,y format
+c1_2d = np.fliplr(c1_tracks.loc[:,['row','col']].to_numpy())
+c2_2d = np.fliplr(c2_tracks.loc[:,['row','col']].to_numpy())
+c3_2d = np.fliplr(c3_tracks.loc[:,['row','col']].to_numpy()) 
+# Shift the origin from top left to lower left OTHERWISE THE DLT COEFS DONT MAKE SENSE
+c1_2d[:,1] = py*2 - c1_2d[:,1] 
+c2_2d[:,1] = py*2 - c2_2d[:,1]
+c3_2d[:,1] = py*2 - c3_2d[:,1]
+
+c1_tracks_botleft = c1_tracks.loc[:,['id','frame']].copy()
+c1_tracks_botleft['x'] = c1_2d[:,0]
+c1_tracks_botleft['y'] = c1_2d[:,1]
+c1_tracks_botleft['id'] = 'k1_'+c1_tracks_botleft['id'].astype(str) 
 c1_tracks_botleft['cid'] = 1
 
-c2_tracks_botleft = c2_tracks.copy()
-c2_tracks_botleft['x'] = c2_2d[:,1]
-c2_tracks_botleft['y'] = c2_2d[:,0]
-c2_tracks_botleft['oid'] = 'k2_'+c2_tracks_botleft['oid'].astype(str) 
+c2_tracks_botleft = c2_tracks.loc[:,['id','frame']].copy()
+c2_tracks_botleft['x'] = c2_2d[:,0]
+c2_tracks_botleft['y'] = c2_2d[:,1]
+c2_tracks_botleft['id'] = 'k2_'+c2_tracks_botleft['id'].astype(str) 
 c2_tracks_botleft['cid'] = 2
 
-
-c3_tracks_botleft = c3_tracks.copy()
-c3_tracks_botleft['x'] = c3_2d[:,1]
-c3_tracks_botleft['y'] = c3_2d[:,0]
-c3_tracks_botleft['oid'] = 'k3_'+c3_tracks_botleft['oid'].astype(str) 
+c3_tracks_botleft = c3_tracks.loc[:,['id','frame']].copy()
+c3_tracks_botleft['x'] = c3_2d[:,0]
+c3_tracks_botleft['y'] = c3_2d[:,1]
+c3_tracks_botleft['id'] = 'k3_'+c3_tracks_botleft['id'].astype(str) 
 c3_tracks_botleft['cid'] = 3
 
 # # #%%
 # # # apply undistortion now OR NOT - it seems to complicate things for now. 
-# cam1_undist = cv2.undistortPoints(np.fliplr(c1_2d), Kteax, dist_coefs, P=Kteax).reshape(-1,2)
-# cam2_undist = cv2.undistortPoints(c2_2d, Kteax, dist_coefs, P=Kteax).reshape(-1,2)
+# cam1_undist = cv2.undistortPoints(c1_2d.reshape(1,-1,2), Kteax, dist_coefs, P=Kteax)
+# cam2_undist = cv2.undistortPoints(c2_2d, Kteax, dist_coefs).reshape(-1,2)
 
 
 #%% Now initialise camera objects with their projection matrices, along with 
@@ -94,7 +100,11 @@ c1_dlt, c2_dlt, c3_dlt  = [dlt_coefs[:,i] for i in range(3)]
 
 #%%
 from track2trajectory.dlt_to_world import partialdlt
-global fnum
+global fnum, k1_images, k2_images, k3_images
+k1_images = natsort.natsorted(glob.glob('cleaned_and_masks/cleaned/K1/*.png'))
+k2_images = natsort.natsorted(glob.glob('cleaned_and_masks/cleaned/K2/*.png'))
+k3_images = natsort.natsorted(glob.glob('cleaned_and_masks/cleaned/K3/*.png'))
+
 fnum = 0
 k1_frame = c1_tracks_botleft[c1_tracks_botleft['frame']==fnum]
 k2_frame = c2_tracks_botleft[c2_tracks_botleft['frame']==fnum]
@@ -112,15 +122,15 @@ a2.set_xlabel('K3')
 def label_all_points(df, ax):
     xy = df.loc[:,['x','y']].to_numpy(dtype=np.float64)
     x, y = xy[:,0], xy[:,1]
-    for xx,yy, pointlabel in zip(x,y, df['oid']):
+    for xx,yy, pointlabel in zip(x,y, df['id']):
         ax.text(xx, yy, pointlabel)
         ax.scatter(xx, yy, facecolor='none', edgecolors='blue')
     ax.figure.canvas.blit(ax.bbox)
 
 def plot_new_image(fnum):
-    image_k1 = plt.imread(f'cleaned_imgs/K1/cleaned_{fnum}.png')
-    image_k2 = plt.imread(f'cleaned_imgs/K2/cleaned_{fnum}.png')
-    image_k3 = plt.imread(f'cleaned_imgs/K3/cleaned_{fnum}.png')
+    image_k1 = plt.imread(k1_images[fnum])
+    image_k2 = plt.imread(k2_images[fnum])
+    image_k3 = plt.imread(k3_images[fnum])
     
     a0.imshow(np.flipud(image_k1), aspect='equal', origin='lower')
     a0.figure.canvas.draw()
@@ -223,6 +233,7 @@ def on_click2(event):
     x_lims = np.linspace(0, px*2, 10)
     epi_line_y12  = m12*x_lims + b12
     epi_line_y13  = m13*x_lims + b13
+    
     
 
     valid_y12 = np.logical_and(epi_line_y12>=0, epi_line_y12 <=2*py)
