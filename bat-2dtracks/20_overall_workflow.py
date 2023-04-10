@@ -47,6 +47,6 @@ import traj_correction_2018_08_17_P01_7000TMC_first25f
 
 #%%
 # Manually match the 2D tracks across cameras
+subprocess.call('python 3_manual_trajmatching_2018-_08_17_7000TMC-first25f.py')
 
-import manual_trajmatching_2018-_08_17_7000TMC-first25f
 
