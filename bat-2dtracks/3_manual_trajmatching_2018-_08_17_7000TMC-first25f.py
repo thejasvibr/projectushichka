@@ -60,6 +60,11 @@ c1_tracks = all_cam_2d[all_cam_2d['camera']=='K1'].reset_index(drop=True)
 c2_tracks = all_cam_2d[all_cam_2d['camera']=='K2'].reset_index(drop=True)
 c3_tracks = all_cam_2d[all_cam_2d['camera']=='K3'].reset_index(drop=True)
 
+c1_tracks['id'] = c1_tracks['id'].astype(int)
+c2_tracks['id'] = c2_tracks['id'].astype(int)
+c3_tracks['id'] = c3_tracks['id'].astype(int)
+
+
 # Flip the columns - as we need the data to be in x,y format
 c1_2d = np.fliplr(c1_tracks.loc[:,['row','col']].to_numpy())
 c2_2d = np.fliplr(c2_tracks.loc[:,['row','col']].to_numpy())
@@ -252,34 +257,23 @@ fig.canvas.mpl_connect('key_press_event', on_press)
 
 plot_new_image(0)
 a0.set_ylim(0,py*2);plt.xlim(0,px*2)
-label_detections(0)
+label_detections(0) 
 # label_all_points(k1_frame, a0)
 # label_all_points(k2_frame, a1)
 
 
 #%%
-c1_ids = c1_tracks_botleft['oid'].unique()
-cam_corresps =   pd.DataFrame(data={'c1_oid': ['k1_1.0', 'k1_2.0', 'k1_6.0',
-                                               'k1_19.0', 'k1_26.0', 'k1_27.0',
-                                               'k1_45.0', 'k1_34.0', np.nan,
-                                               np.nan,    np.nan   , np.nan,
-                                               np.nan,    np.nan],
-                                    'c2_oid': ['k2_1.0', 'k2_2.0', 'k2_4.0',
-                                               'k2_6.0',  'k2_8.0', 'k2_5.0',
-                                               'k2_11.0', np.nan, 'k2_10.0',
-                                               'k2_15.0', 'k2_16.0', 'k2_3.0',
-                                               'k2_12.0', 'k2_17.0'],
-                                    'c3_oid': ['k3_4.0', 'k3_5.0',  np.nan,
-                                               'k3_41.0', 'k3_36.0', 'k3_21.0',
-                                               'k3_43.0', np.nan, np.nan,
-                                               'k3_44.0', np.nan , np.nan,
-                                               np.nan   , np.nan]})
+c1_ids = c1_tracks_botleft['id'].unique()
+cam_corresps =   pd.read_csv('matched_ids_2018-08-17_P01-7000first25frames.csv')
+cam_corresps.columns = ['c1_id', 'c2_id', 'c3_id']
+
+
 def fuse_point_ids(correspondences):
     '''
     Parameters
     ----------
     correspondences: pd.DataFrame
-        With columns 'c1_oid, c2_oid, c3_oid'
+        With 3  columns e.g. 'c1_id, c2_id, c3_id'
 
     Returns 
     -------
@@ -289,15 +283,16 @@ def fuse_point_ids(correspondences):
         ids separted by an underscore ('_')
     '''
     with_fusedid = correspondences.copy()
-    with_fusedid['fused_id'] = with_fusedid['c1_oid'].astype(str) + '-'+ with_fusedid['c2_oid'].astype(str) + '-' + with_fusedid['c3_oid'].astype(str)
+    col1, col2, col3  = with_fusedid.columns
+    with_fusedid['fused_id'] = with_fusedid[col1].astype(str) + '-'+ with_fusedid[col2].astype(str) + '-' + with_fusedid[col3].astype(str)
     return with_fusedid
 
-# check to see if there are some other correspondences to be made. 
-c2_notmatched = set(c2_tracks_botleft['oid'].unique()) - set(cam_corresps['c2_oid'])
-c3_notmatched = set(c3_tracks_botleft['oid'].unique()) - set(cam_corresps['c3_oid'])
+# check to see if there are some points that were not yet handled
 
-c2_tracks_botleft.groupby('oid').get_group('k2_17.0')
-c3_tracks_botleft.groupby('oid').get_group('k3_4.0')
+c1_notmatched = set(c1_tracks_botleft['id'].unique()) - set(cam_corresps['c1_id'])
+c2_notmatched = set(c2_tracks_botleft['id'].unique()) - set(cam_corresps['c2_id'])
+c3_notmatched = set(c3_tracks_botleft['id'].unique()) - set(cam_corresps['c3_id'])
+
 
 #%% 
 # Assign new point ids to the old ids
@@ -318,14 +313,41 @@ def assign_new_point_id(matched_ids, cam_df):
     pd.Series?
     '''
     df_copy = cam_df.copy()
-    df_copy['point_id'] = df_copy['oid'].copy()
+    df_copy['point_id'] = df_copy['id'].copy()
     # replace the oid with the fused id
     for i, row in df_copy.iterrows():
-        matched_ids_rowcol = np.argwhere((matched_ids == row['oid']).to_numpy()).flatten()
+        matched_ids_rowcol = np.argwhere((matched_ids == row['id']).to_numpy()).flatten()
         matched_ids_row = matched_ids_rowcol[0]
         df_copy.loc[i,'point_id'] = matched_ids.loc[matched_ids_row, 'fused_id']
     return df_copy
 
+def drop_2nan_points(all_campoints):
+    '''
+    Parameters
+    ----------
+    all_campoints : pd.DataFrame
+        With at least a column called 'point_id'.
+        The point id has a form <cam1pointID>-<cam2pointID>-<cam3pointID>
+    
+    Returns
+    -------
+    triangulatable : pd.DataFrame
+        The subset of points that are matched across at least two cameras. 
+    '''
+    # Find all rows with >= 2 nans in the point id
+    geq_2_nans = []
+    for each in all_campoints['point_id']:
+        parts = each.split('-')
+        nans_present = [True for each in parts if each == 'nan']
+        if len(nans_present) <2:
+            geq_2_nans.append(False)
+        elif len(nans_present)>=2:
+            geq_2_nans.append(True)
+    triangulatable = all_campoints[np.invert(geq_2_nans)]
+    return triangulatable
+            
+        
+            
 
 cam1_points = assign_new_point_id(matched_ids, c1_tracks_botleft)
 cam2_points = assign_new_point_id(matched_ids, c2_tracks_botleft)

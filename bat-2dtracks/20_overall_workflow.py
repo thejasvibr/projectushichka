@@ -40,12 +40,13 @@ for cam in ['K1','K2','K3']:
 
 
 #%% 
-# Trajectory 
-# Initalise the inter-camera matching script - and assemble the correspondences.
+# Get 2D tracks and correct them
 # Run traj_correction_2018-08-17_P01-7000TMC-first25f.py and inspect the tracking + implement corrections. 
 
 import traj_correction_2018_08_17_P01_7000TMC_first25f
 
 #%%
-# 
+# Manually match the 2D tracks across cameras
+
+import manual_trajmatching_2018-_08_17_7000TMC-first25f
 
