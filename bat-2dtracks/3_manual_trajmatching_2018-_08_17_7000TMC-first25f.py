@@ -27,6 +27,7 @@ Created on Mon Mar 20 13:20:38 2023
 """
 
 # -*- coding: utf-8 -*-
+import cv2
 import glob
 import matplotlib.pyplot as plt
 import natsort
@@ -226,27 +227,40 @@ def on_click2(event):
         ax_source = a2
         ax_C2 = a0
         ax_C3 = a1
-
+    
+    u,v = event.xdata, event.ydata
+    ax_source.plot(u,v,'w*')
     ax_source.figure.canvas.draw()
     ax_C2.figure.canvas.draw()
     ax_C3.figure.canvas.draw()
     
     
-    u,v = event.xdata, event.ydata
+    
     m12 ,b12 = partialdlt(u, v, C1, C2)
     m13 ,b13 = partialdlt(u, v, C1, C3)
-    x_lims = np.linspace(0, px*2, 10)
+    x_lims = np.linspace(0, px*2, 100)
     epi_line_y12  = m12*x_lims + b12
     epi_line_y13  = m13*x_lims + b13
     
+    undist_epiline_xy12 = cv2.undistortPoints(np.column_stack((x_lims, epi_line_y12)),
+                                             Kteax, dist_coefs, P=Kteax).reshape(-1,2)
+    undist_epiline_xy13 = cv2.undistortPoints(np.column_stack((x_lims, epi_line_y13)),
+                                             Kteax, dist_coefs, P=Kteax).reshape(-1,2)
     
 
-    valid_y12 = np.logical_and(epi_line_y12>=0, epi_line_y12 <=2*py)
-    ax_C2.plot(x_lims[valid_y12], epi_line_y12[valid_y12], 'r', linewidth=0.5)
+    valid_y12 = np.logical_and(undist_epiline_xy12[:,1]>0, undist_epiline_xy12[:,1] <2*py)
+    valid_x12 = np.logical_and(undist_epiline_xy12[:,0]>0, undist_epiline_xy12[:,0] <2*px)
+    valid_xy12 = np.logical_and(valid_y12, valid_x12)
     
     
-    valid_y13 = np.logical_and(epi_line_y13>=0, epi_line_y13 <=2*py)
-    ax_C3.plot(x_lims[valid_y13], epi_line_y13[valid_y13], 'r', linewidth=0.5)
+    ax_C2.plot(undist_epiline_xy12[valid_xy12,0], undist_epiline_xy12[valid_xy12,1],
+               'r', linewidth=0.5)
+    
+    valid_y13 = np.logical_and(undist_epiline_xy13[:,1]>0, undist_epiline_xy13[:,1] <2*py)
+    valid_x13 = np.logical_and(undist_epiline_xy13[:,0]>0, undist_epiline_xy13[:,0] <2*px)
+    valid_xy13 = np.logical_and(valid_x13, valid_y13)
+    ax_C3.plot(undist_epiline_xy13[valid_xy13,0], undist_epiline_xy13[valid_xy13,1],
+               'r', linewidth=0.5)
     ax_source.figure.canvas.draw()
     ax_C2.figure.canvas.draw()
     ax_C3.figure.canvas.draw()
