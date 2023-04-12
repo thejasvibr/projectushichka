@@ -101,6 +101,19 @@ plt.plot(sync_channel)
 frame_triggers = sync_channel.copy()
 frame_triggers -= np.mean(frame_triggers)
 frame_triggers /= np.max(frame_triggers)
-frames = frame_triggers>0.1
+frames = frame_triggers>=0.05
 frame_labels, num_frames = ndi.label(frames)
+frame_slices = ndi.find_objects(frame_labels)
 print(f'Num frames with audio data: {num_frames}')
+
+# Get the first 25 frames out - this corresponds to the start indices of the 
+# first 25 labelled objects
+start, stop = frame_slices[0][0].start, frame_slices[25][0].start
+# re-arrange so that the 8th sync channel is the last one
+first_second_audio_12ch = rec[start:stop,[0,1,2,3,4,5,6,8,9,10,11,7]]
+sf.write("0-1second_1534537686_first12channels.wav", first_second_audio_12ch, samplerate=fs)
+
+
+
+
+
