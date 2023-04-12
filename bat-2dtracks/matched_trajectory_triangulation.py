@@ -68,11 +68,11 @@ def calc_xyz_from_uv(cam_data, dlt_coefs):
     '''
     Parameters
     ----------
-    cam_data : pd.DataFrame
-        (Ncams, 3) xy data of the same point in one frame. 
-        With columns cid, x, y
+    cam_data : (Ncams, 3) np.array
+        With columns representing [camera id, x, y]
     dlt_coefs : (11,Ncams) np.array
         11 DLT coefficients  for each camera
+
     Returns 
     -------
     soln : (3,1) np.array
@@ -83,6 +83,8 @@ def calc_xyz_from_uv(cam_data, dlt_coefs):
     See  http://www.kwon3d.com/theory/dlt/dlt.html#3d eqn. 22
     '''
     ncams = cam_data.shape[0]
+    if ncams<2:
+        raise ValueError(f'Only {ncams} detected. >=2 cameras required!')
     cam_row_stack_LHS = []
     cam_row_stack_RHS = []
     for i in range(ncams):
@@ -99,7 +101,6 @@ def calc_xyz_from_uv(cam_data, dlt_coefs):
     LHS = np.row_stack(cam_row_stack_LHS)
     RHS = np.row_stack(cam_row_stack_RHS)
     soln, residual, *other = np.linalg.lstsq(LHS, RHS)
-
 
     return soln, residual 
 #%%
@@ -128,14 +129,16 @@ def triangulate_multicamera_data(allcam_data, dltcoefs):
     for point_id, sub_df in by_id:
         by_frame = sub_df.groupby('frame')
         for fnum, subsub_df in by_frame:
+            #print(f'frame: {fnum}')
             cam_data = subsub_df.dropna().loc[:,['cid','x','y']].to_numpy()
-            soln, _ = calc_xyz_from_uv(cam_data, dltcoefs)
-            x,y,z = soln.flatten()
-            xdata.append(x)        
-            ydata.append(y)
-            zdata.append(z)
-            framenums.append(fnum)
-            all_point_id.append(point_id)
+            if cam_data.shape[0]>1:
+                soln, _ = calc_xyz_from_uv(cam_data, dltcoefs)
+                x,y,z = soln.flatten()
+                xdata.append(x)        
+                ydata.append(y)
+                zdata.append(z)
+                framenums.append(fnum)
+                all_point_id.append(point_id)
     triangulated = pd.DataFrame(data={'framenum': framenums,
                                       'point_id': all_point_id,
                                       'x': xdata,
@@ -159,7 +162,7 @@ for pointid, sub_df in triangulated_undist.groupby('point_id'):
     a9.text(last_xyz[0],last_xyz[1],last_xyz[2], pointid, fontsize=10, color=text_colo)
 #%%
 plt.figure()
-a0 = plt.subplot(111)
+plt.subplot(111)
 for pointid, sub_df in triangulated_undist.groupby('point_id'):
     xyz = sub_df.loc[:,['framenum','x','y','z']]
     xyz['t'] = xyz['framenum']*0.04
@@ -171,10 +174,9 @@ plt.legend()
 # Assign numeric keycodes to the various point-ids
 point_xyz = triangulated_undist.loc[:,['x','y','z']].to_numpy().T
 point_xyz = np.row_stack((point_xyz, np.tile(1, point_xyz.shape[1])))
-numeric_ids, _ = pd.factorize(triangulated['point_id'])
+numeric_ids, pointid_nums = pd.factorize(triangulated['point_id'])
 object_cmap_object= plt.cm.get_cmap("viridis", len(np.unique(numeric_ids)))
 object_cmaps = object_cmap_object.colors
-
 
 
 #%% XYZ for microphone points
@@ -220,6 +222,7 @@ micxyz_undist = triangulate_multicamera_data(allcams_undist_micxy, dlt_coefs)
 micarray_undist  = micxyz_undist.loc[[19,1,2,3],'x':'z'].to_numpy()
 undist_tristar_center_toall = distance_matrix(micarray_undist, micarray_undist)
 mic2mic_undist_xyz = distance_matrix(micxyz_undist.loc[:,'x':'z'], micxyz_undist.loc[:,'x':'z'])
+
 #%% Now align the points to the cave LiDAR system and see if the trajectories make sense
 # contextually. We can then go back and make corrections. 
 lidar_data = pv.read('../thermo_lidar_alignment/data/lidar_roi.ply')
@@ -230,13 +233,70 @@ A = np.array(([-0.7533, 0.6353, -0.1699, -1.7994],
               [-0.0144, 0.2424, 0.9701, 0.2003]))
 # Bring the 3d points in camera frame to LiDAR frame. 
 points_lidarframe = np.apply_along_axis(lambda X: np.matmul(A, X), 0, point_xyz).T
+framenums = triangulated_undist['framenum']
 
+# move the mic xyz to the LiDAR coordinate system 
+micxyz_homog =  np.column_stack((micxyz_undist.loc[:,'x':'z'].to_numpy(),
+                                 np.tile(1,micxyz_undist.shape[0])))
+micxyz_undist_lidarframe = np.apply_along_axis(lambda X: np.matmul(A, X), 0, micxyz_homog.T).T
+
+# SAve the bat trajectories and microphone xyz in the lidar frame into the same csv file.
+micxyz_lidarframe = micxyz_undist.copy()
+micxyz_lidarframe.loc[:,'x':'z'] = micxyz_undist_lidarframe 
+micxyz_lidarframe['point_id'] = 'm-'+micxyz_lidarframe['point_id']
+battrajs_lidarframe = triangulated_undist.copy()
+battrajs_lidarframe.loc[:,'x':'z'] = points_lidarframe
+bat_and_mic = pd.concat((micxyz_lidarframe, battrajs_lidarframe)).reset_index(drop=True)
+bat_and_mic.to_csv('2018-08-17_7000TMC_first25frames_bat-and-mic-lidarframe.csv')
+
+#%%
 plotter = pv.Plotter()
-plotter.add_mesh(lidar_data, show_edges=True, color=True)
-camera_pos = (2.86, -1.71, -1.69)
+
+def callback(x):
+    print(x)
+    print(f'camera position: {plotter.camera.position}')
+    print(f'camera az,rol,elev: {plotter.camera.azimuth},{plotter.camera.roll},\
+          {plotter.camera.elevation}')
+    print(f'camera view angle, focal point: {plotter.camera.view_angle,plotter.camera.focal_point}')
+plotter.track_click_position(callback)
+
+plotter.add_mesh(lidar_data, color='brown', )
+camera_pos = (8.11, -5.82, -1.11)
+camera_pos = (6.11, -4.2, -0.84)
 
 plotter.camera.position = camera_pos
-for col, each in zip(numeric_ids, points_lidarframe):
-    plotter.add_mesh(pv.Sphere(radius=0.05, center=each), color=object_cmaps[col][:-1], label=str(col))
+plotter.camera.azimuth = 0
+plotter.camera.roll = -94
+plotter.camera.elevation = -0 #-15
+plotter.camera.view_angle = 45
 
-plotter.show()
+
+for col, each, frame in zip(numeric_ids, points_lidarframe, framenums):
+    plotter.add_mesh(pv.Sphere(radius=0.05, center=each),
+                         color=object_cmaps[col][:-1])
+
+# Also add the microphones into the scene
+for xyz in micxyz_undist_lidarframe:
+    plotter.add_mesh(pv.Sphere(radius=0.02, center=xyz),
+                         color='r')
+plotter.add_text('Ushichka 2018-08-17 7000 TMC 0-1 second', position='lower_left')
+
+light = pv.Light(position=camera_pos, color='white', light_type='scene light',
+                 intensity=0.3)
+plotter.add_light(light)
+legend_entries = []
+for point_num, point_id in enumerate(pointid_nums):
+    legend_entries.append([point_id, object_cmaps[point_num][:-1]])
+
+_ = plotter.add_legend(legend_entries)
+plotter.save_graphic('Ushichka-2018-08-17_P01_7000TMC_0-1second.pdf')
+if __name__ == "__main__":
+    plotter.show()
+else:
+    plotter.close()
+
+
+#%%
+# TODO
+# ~~~~
+# Make an animation together that shows the dynamic trajectories over time.

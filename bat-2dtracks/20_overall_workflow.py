@@ -51,7 +51,9 @@ import traj_correction_2018_08_17_P01_7000TMC_first25f
 subprocess.call('python 3_manual_trajmatching_2018-_08_17_7000TMC-first25f.py')
 
 #%%
-# Triangulate the 
+# Triangulate the matched tracks into 3D coordinates. Also get the microphone xyz
+# in the LiDAR coordinate system 
+subprocess.call('python matched_trajectory_triangulation.py')
 
 
 
