@@ -92,7 +92,7 @@ match_index_start = np.where(np.array(match_array)==0)[0]
 target_audio = list(filter(lambda X: '1534537686' in X, audio_files))[0]
 
 rec, fs  = sf.read(target_audio)
-sync_channel = rec[:,23]
+sync_channel = rec[:,7]
 #%%
 plt.figure()
 plt.plot(sync_channel)
