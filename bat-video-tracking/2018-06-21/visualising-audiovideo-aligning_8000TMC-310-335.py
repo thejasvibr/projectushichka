@@ -42,18 +42,40 @@ for batid, subdf in all_batxyz.groupby('batid'):
 # choose only those mics which are in the audio file: S9-12, SMP1-6
 audio_order = current_order[-4:] + current_order[:6]
 audio_order_inds = [np.where(micxyz_df['micname']==each)[0][0] for each in audio_order]
-ordered_micxyz_df = micxyz_df.loc[audio_order_inds,:]
+ordered_micxyz_df = micxyz_df.loc[audio_order_inds,:].reset_index(drop=True)
 #%%
 # Also try to find the rotation+translation matrix to go from camera coordinate system
 # to TotalStation system
 ordered_micxyz = ordered_micxyz_df.loc[:,'x':'z'].to_numpy()
 totalstation_xyz_df = pd.read_csv('../../audio-video-matching/arraygeom_2018-06-21_1529543496.csv')
-totalstation_xyz = np.column_stack((totalstation_xyz_df['y'], totalstation_xyz_df['x'], totalstation_xyz_df['z']))
+totalstation_xyz = totalstation_xyz_df.loc[:,'x':'z'].to_numpy()
+
+totalstation_xyz_sanken9centred = totalstation_xyz - totalstation_xyz[0,:]
+ordered_micxyz_sanken9centred = ordered_micxyz - ordered_micxyz[0,:]
+
 from scipy.spatial.transform import Rotation
+out, ssd = Rotation.align_vectors(totalstation_xyz_sanken9centred, ordered_micxyz_sanken9centred)
+rotmat = out.as_matrix()
+pd.DataFrame(data=rotmat).to_csv('Sanken9_centred-video-to-TotalStation_transform.csv')
 
-out, ssd = Rotation.align_vectors(totalstation_xyz, ordered_micxyz)
+ordered_micxyz_sanken9centred_df = pd.DataFrame(ordered_micxyz_sanken9centred)
+ordered_micxyz_sanken9centred_df['micname'] = ordered_micxyz_df.loc[:,'micname']
+ordered_micxyz_sanken9centred_df.to_csv('Sanken9_centred_mic_videoxyz.csv')
 
+totalstation_xyz_sanken9centred_df = pd.DataFrame(totalstation_xyz_sanken9centred)
+totalstation_xyz_sanken9centred_df['micname'] = ordered_micxyz_df.loc[:,'micname']
+totalstation_xyz_sanken9centred_df.to_csv('Sanken9_centred_mic_totalstationxyz.csv')
+#%% And now centre all the bat flight trajectories to SANKEN9 too. 
+all_batxyz.loc[:,'x':'z'] -=  ordered_micxyz[0,:]
+all_batxyz.to_csv('bat_trajs_round1_sanken9_centred.csv')
 
+#%%
+plt.figure()
+a0 = plt.subplot(111, projection='3d')
+plt.plot(ordered_micxyz_sanken9centred[:,0], ordered_micxyz_sanken9centred[:,1], ordered_micxyz_sanken9centred[:,2], '*')
+plt.plot(ordered_micxyz_sanken9centred[0,0],
+         ordered_micxyz_sanken9centred[0,1],
+         ordered_micxyz_sanken9centred[0,2], 'k*')
 
-
-
+for batid, subdf in all_batxyz.groupby('batid'):
+    plt.plot(subdf.loc[:,'x'], subdf.loc[:,'y'], subdf.loc[:,'z'])

@@ -43,7 +43,7 @@ print(f'Total video recording time {np.sum(video_durations)} s')
 
 #%% Get an estimate of the total audio recording time in the first session. 
 
-audio_filefolder = 'F:\\fieldwork_2018_001\\actrackdata\\wav\\2018-06-21_001\\'
+audio_filefolder = 'E:\\fieldwork_2018_001\\actrackdata\\wav\\2018-06-21_001\\'
 audio_files = natsorted(glob.glob(audio_filefolder+'*.wav'))
 audio_durations = [sf.info(each).duration for each in audio_files]
 print(f'Total audio recording duration {sum(audio_durations)} s ')
@@ -54,10 +54,11 @@ odd_video_file = set(video_durations) - set(audio_durations)
 odd_video_ind = int(np.argwhere(video_durations==list(odd_video_file)[0])[0])
 print(f'Odd video file is: {all_csvfiles[odd_video_ind]}')
 
-#%% Preparing audio for first 15s of 8000.TMC 
-audio_f8000  = audio_files[8]
-fs = sf.info(audio_f8000).samplerate
-raw_audio, fs = sf.read(audio_f8000, stop=int(18*fs))
+#%% Preparing audio for first 16s of 22000.TMC 
+
+audio_f22000  = [each for each in audio_files if '1529546136' in each][0]
+fs = sf.info(audio_f22000).samplerate
+raw_audio, fs = sf.read(audio_f22000, stop=int(16*fs))
 #%%
 # Get sync channels on both audio interfaces. Channels 0-7 are from device 1
 # Channels 8-15 are from device 2. In both devices, there were some channels 
@@ -113,32 +114,32 @@ plt.plot(raw_audio[start_samples[1]:192000,-1])
 # |       8        |    SMP 5     |
 # |       9        |    SMP 6     |
 
-posix_timestamp_wextension = audio_f8000.split('_')[-1]
+posix_timestamp_wextension = audio_f22000.split('_')[-1]
 posix_timestamp = posix_timestamp_wextension.split('.')[0]
 sf.write(f'video_synced10channel_first15sec_{posix_timestamp_wextension}',
          synced_audio[:int(fs*15),:], 
          samplerate=fs)
 
-#%% 
-# Also generate the array geometry file from the TotalStation survey of that day
-# and organise
-survey_points =  pd.read_csv('../acoustic-tracking/2018-06-21/Cave.csv', header=None)
-survey_points.columns = ['point_name','x','y','z']
-to_keep = ['S0', 'S1', 'S2', 'S3', 'M1', 'M2', 'M3', 'M4', 'M5', 'M6']
-row_inds = [np.where(survey_points['point_name']==each)[0][0] for each in to_keep]
-micarray_xyz = survey_points.loc[row_inds,:].reset_index(drop=True)
+# #%% 
+# # Also generate the array geometry file from the TotalStation survey of that day
+# # and organise
+# survey_points =  pd.read_csv('../acoustic-tracking/2018-06-21/Cave.csv', header=None)
+# survey_points.columns = ['point_name','x','y','z']
+# to_keep = ['S0', 'S1', 'S2', 'S3', 'M1', 'M2', 'M3', 'M4', 'M5', 'M6']
+# row_inds = [np.where(survey_points['point_name']==each)[0][0] for each in to_keep]
+# micarray_xyz = survey_points.loc[row_inds,:].reset_index(drop=True)
 
-tristar = micarray_xyz.loc[:3,'x':'z'].to_numpy()
-from scipy.spatial import distance_matrix
-print(distance_matrix(tristar, tristar))
+# tristar = micarray_xyz.loc[:3,'x':'z'].to_numpy()
+# from scipy.spatial import distance_matrix
+# print(distance_matrix(tristar, tristar))
 
-#%% Switch the handedness of the TotalStation readings - they don't match 
-# what I've been seeing in the real world. 
-micarray_xyz_handedswitch = micarray_xyz.copy()
-micarray_xyz_handedswitch['x'] = micarray_xyz.loc[:,'y']
-micarray_xyz_handedswitch['y'] = micarray_xyz.loc[:,'x']
+# #%% Switch the handedness of the TotalStation readings - they don't match 
+# # what I've been seeing in the real world. 
+# micarray_xyz_handedswitch = micarray_xyz.copy()
+# micarray_xyz_handedswitch['x'] = micarray_xyz.loc[:,'y']
+# micarray_xyz_handedswitch['y'] = micarray_xyz.loc[:,'x']
 
-micarray_xyz_handedswitch.to_csv(f'arraygeom_2018-06-21_{posix_timestamp}.csv')
+# micarray_xyz_handedswitch.to_csv(f'arraygeom_2018-06-21_{posix_timestamp}.csv')
 
-distance_matrix(micarray_xyz_handedswitch.loc[:,'x':'z'], micarray_xyz_handedswitch.loc[:,'x':'z'])
+# distance_matrix(micarray_xyz_handedswitch.loc[:,'x':'z'], micarray_xyz_handedswitch.loc[:,'x':'z'])
 
