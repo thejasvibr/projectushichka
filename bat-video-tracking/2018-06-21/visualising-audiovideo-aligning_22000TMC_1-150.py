@@ -64,10 +64,11 @@ ordered_micxyz_sanken9centred_df.to_csv('Sanken9_centred_mic_videoxyz.csv')
 
 totalstation_xyz_sanken9centred_df = pd.DataFrame(totalstation_xyz_sanken9centred)
 totalstation_xyz_sanken9centred_df['micname'] = ordered_micxyz_df.loc[:,'micname']
+totalstation_xyz_sanken9centred_df.columns = ['x','y','z','micname']
 totalstation_xyz_sanken9centred_df.to_csv('Sanken9_centred_mic_totalstationxyz.csv')
 #%% And now centre all the bat flight trajectories to SANKEN9 too. 
 all_batxyz.loc[:,'x':'z'] -=  ordered_micxyz[0,:]
-all_batxyz.to_csv('bat_trajs_round1_sanken9_centred.csv')
+all_batxyz.to_csv('P00_22000_bat_trajs_round1_sanken9_centred.csv')
 
 #%%
 plt.figure()

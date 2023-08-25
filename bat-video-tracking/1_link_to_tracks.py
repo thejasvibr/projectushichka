@@ -54,25 +54,32 @@ parser.add_argument('-mask_source', type=str, help='Source folder with file patt
                      /masks/K1/K1*.png . Input needs to be glob-able.')
 parser.add_argument('-raw_source', type=str, help='Source folder with file pattern for binarised images. e.g.\
                      /masks/K1/K1*.png . Input needs to be glob-able.')
-parser.add_argument('-dest', type=str, default='./', help='Destination for all the cleaned camera images. \
+parser.add_argument('-dest', type=pathlib.Path, default='./', help='Destination for all the cleaned camera images. \
                     Defaults to current folder. Folder will be made if it does not exist')
 parser.add_argument('-cam_id', type=str, help='Camera ID')
 parser.add_argument('-config', type=pathlib.Path, default='./bat_config.json', help='The \
                     config file path to set up the tracking workflow for btrack. Defaults to ./bat_config.json')
 parser.add_argument('-maxsearchradius', type=float, default=80, help='The max search radius within which\
                     a search is conducted while particle-linking to tracks in pixels. Defaults to 80.')
+parser.add_argument('-outputfilename', type=str, default=None,
+                    help='The common output file name across camera views for the 2D tracks.')
 
 args = parser.parse_args()
 #%%
+
 cam_id = args.cam_id
 relevant_images = natsort.natsorted(glob.glob(args.mask_source))
 bat_detection_masks = np.array([skimage.io.imread(each) for each in relevant_images])
 width = bat_detection_masks[0,:,:].shape[1]
 height = bat_detection_masks[0,:,:].shape[0]
 # get common filename patterns
-a,b = [os.path.split(each)[-1] for each in [relevant_images[0], relevant_images[-1]]]
-common_range = SeqMatch(None, a, b, autojunk=False).find_longest_match(0,len(a),0,len(b))
-common_str = a[:common_range.size]
+if args.outputfilename is None:   
+    a,b = [os.path.split(each)[-1] for each in [relevant_images[0], relevant_images[-1]]]
+    common_range = SeqMatch(None, a, b, autojunk=False).find_longest_match(0,len(a),0,len(b))
+    common_str = a[:common_range.size]
+
+else:
+    common_str = args.outputfilename
 
 #%%
 FEATURES = ('area','axis_major_length','axis_minor_length','orientation',
@@ -105,6 +112,9 @@ with btrack.BayesianTracker() as tracker:
 
     # get the tracks in a format for napari visualization
     data, properties, graph = tracker.to_napari()
+    data_df = pd.DataFrame(data, columns=['id','frame','row','col'])
+    for key, measures in properties.items():
+        data_df[key] = measures
     
     # store the tracks
     tracks = tracker.tracks
@@ -132,5 +142,14 @@ with btrack.BayesianTracker() as tracker:
 #     name="Tracks", 
 #     blending="translucent",
 # )
-tracking_data = pd.DataFrame(data, columns=['id','frame','row','col'])
-tracking_data.to_csv(f'{common_str}_tracks_first25_frames.csv')
+print(args.dest, 'MIAOW')
+if not os.path.exists(args.dest):
+    try:
+        os.mkdir(args.dest)
+    except:
+        os.makedirs(args.dest)
+
+final_output_path = os.path.join(args.dest, f'{common_str}_tracks.csv')    
+
+#tracking_data = pd.DataFrame(data, columns=['id','frame','row','col'])
+data_df.to_csv(final_output_path)

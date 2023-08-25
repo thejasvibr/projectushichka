@@ -1,0 +1,45 @@
+Thoughts and notes on performing transfer-entropy analysis
+==========================================================
+
+Cave curvature
+~~~~~~~~~~~~~~
+While bats may definitely be interacting with one another, they
+still are most likely 'interacting'/responding with/to the cave's surface
+the most. It'll be important to account for the cave's geometry while
+analysing any kind of information theoretical metrics. 
+
+Bat trajectories
+~~~~~~~~~~~~~~~~
+* What are the information metric strength for a single bat flying in the cave by itself
+with the walls
+* How does the information metric between bats change when you synthetically add another bat flying 
+in the same volume?
+* What are the information metrics amongst bats that are truly flying in groups? 
+
+
+What data is needed
+~~~~~~~~~~~~~~~~~~~
+* Multiple single bat trajectories
+* Multiple multi-bat trajectories 
+* thermo-LiDAR alignment matrices
+
+What we have now
+~~~~~~~~~~~~~~~~
+* 2018-08-17_P01_7000 first 25 frames ~8 bats
+* 
+
+What else can be done
+~~~~~~~~~~~~~~~~~~~~~
+
+Digitisation work
+-----------------
+* 2018-08-17 - videos of single/few bats flying around in P00
+* 
+
+
+
+Caveats
+~~~~~~~
+* What happens when a bat leaves the scene - 
+* What about species - will need to try and estimate this from the video and audio data from the 
+flight and call behaviour. 
