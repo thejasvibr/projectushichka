@@ -45,7 +45,6 @@ parser.add_argument('-cam_id', type=str, help='Camera ID')
 parser.add_argument('-disksize', type=int, help='Disk size to calculate the entropy of pixels. Needs to match the smallest size of the object')
 args = parser.parse_args()
 
-
 #%%
 cam_id = args.cam_id
 image_paths = natsort.natsorted(glob.glob(args.source)[args.start:args.end+1])
@@ -87,7 +86,10 @@ def remove_vert_horiz_lines(image):
 cleaned_images = []
 print('Cleaning fixed pattern noise ...\n')
 for each in tqdm.tqdm(images):
-    cleaned_images.append(remove_vert_horiz_lines(each[:,:,2]))
+    try:
+        cleaned_images.append(remove_vert_horiz_lines(each[:,:,2]))
+    except:
+        cleaned_images.append(remove_vert_horiz_lines(each))  
 
 minmax = [(np.min(X), np.max(X)) for X in cleaned_images]
 #%%

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Track matching to get 3d points 2018-08-17
+Track matching to get 3d points 2018-08-17 P01-1000 TMC
 ==========================================
 
 Track generation
@@ -55,7 +55,7 @@ from scipy.spatial import distance
 import cv2
 #%%
 camids = ['K1', 'K2', 'K3']
-trackfiles = [glob.glob(os.path.join('entropy','masks',each,'*.csv'))[0] for each in camids]
+trackfiles = [glob.glob(os.path.join('P01_1000TMC','linked_tracks',each+'*.csv'))[0] for each in camids]
 camera_tracks = {each: pd.read_csv(filepaths, header=0,skiprows=[1,2,3]) for each, filepaths in zip(camids, trackfiles)}
 for camid, df in camera_tracks.items():
     df['cam_id'] = camid
@@ -139,35 +139,6 @@ c3_tracks_botleft['cid'] = 3
 #%%
 # Perform the corrections here itself initially 
 
-#### K1 corrections 
-# remove k1_10 on frame 43 and set id to k1_9
-relevant_row = np.logical_and(c1_tracks_botleft['frame']==43, c1_tracks_botleft['id']=='k1_10')
-c1_tracks_botleft.loc[c1_tracks_botleft[relevant_row].index,'id'] = 'k1_9'
-# set one of the double k1_10 entry to k1_9
-relevant_rows = np.logical_and(c1_tracks_botleft['frame']==44, c1_tracks_botleft['id']=='k1_10')
-wrong_k10_index = c1_tracks_botleft.loc[relevant_rows,:].sort_values('x').index[0]
-c1_tracks_botleft.loc[wrong_k10_index,'id'] = 'k1_9'
-# there's also been a switch of k1_9 from frame 45 onwards
-frames45_on = np.logical_and(c1_tracks_botleft['frame']>=45, c1_tracks_botleft['id']=='k1_10')
-c1_tracks_botleft.loc[frames45_on, 'id'] = 'k1_9'
-# mislabel of k1_9 --> k1_10 because of previous operation on frames 48, 49
-for frame in [48, 49]:
-    relevant_rows = np.logical_and(c1_tracks_botleft['frame']==frame, c1_tracks_botleft['id']=='k1_9')
-    relevant_ind = c1_tracks_botleft.loc[relevant_rows].sort_values('x').index[1]
-    c1_tracks_botleft.loc[relevant_ind, 'id'] = 'k1_10'
-
-##### K2 corrections
-
-k2_7_rows = c2_tracks_botleft[np.logical_and(c2_tracks_botleft['frame']==2, c2_tracks_botleft['id']=='k2_7')].sort_values('x').index
-c2_tracks_botleft = c2_tracks_botleft.drop(k2_7_rows[0])
-
-k2_5_rows = c2_tracks_botleft[np.logical_and(c2_tracks_botleft['frame']==5, c2_tracks_botleft['id']=='k2_5')].sort_values('x').index
-c2_tracks_botleft = c2_tracks_botleft.drop(k2_5_rows[1]) 
-
-k2_57_rows = c2_tracks_botleft[np.logical_and(c2_tracks_botleft['frame']==21, c2_tracks_botleft['id']=='k2_57')].sort_values('x').index
-c2_tracks_botleft = c2_tracks_botleft.drop(k2_57_rows[0]) 
- 
-
 
 # Check for repeats in ID within a frame. If there are any - print a notification
 for camdata in [c1_tracks_botleft, c2_tracks_botleft, c3_tracks_botleft]:
@@ -186,9 +157,9 @@ c1_dlt, c2_dlt, c3_dlt  = [dlt_coefs[:,i] for i in range(3)]
 #%%
 
 global fnum, k1_images, k2_images, k3_images
-k1_images = natsort.natsorted(glob.glob('entropy/cleaned/K1/*.png'))
-k2_images = natsort.natsorted(glob.glob('entropy/cleaned/K2/*.png'))
-k3_images = natsort.natsorted(glob.glob('entropy/cleaned/K3/*.png'))
+k1_images = natsort.natsorted(glob.glob('P01_1000TMC/cleaned/K1/*.png'))
+k2_images = natsort.natsorted(glob.glob('P01_1000TMC/cleaned/K2/*.png'))
+k3_images = natsort.natsorted(glob.glob('P01_1000TMC/cleaned/K3/*.png'))
 
 fnum = 0
 k1_frame = c1_tracks_botleft[c1_tracks_botleft['frame']==fnum]

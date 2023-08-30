@@ -13,8 +13,6 @@ import os
 import pandas as pd
 import pyvista as pv
 
-
-
 datafolder = os.path.join('..',
                           'thermo_lidar_alignment')
 mesh_path = os.path.join(datafolder, 'data','lidar_roi.ply')
