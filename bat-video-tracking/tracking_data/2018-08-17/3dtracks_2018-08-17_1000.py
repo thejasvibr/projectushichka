@@ -31,6 +31,7 @@ Coodinate systems
 ~~~~~~~~~~~~~~~~~
 Each package has a different 2D coordinate system output/expectation. 
 
+TrackMate: top-left coordinate system 
 DLT based functions : origin at bottom-left. Y increases in upward direction
 opencv2 : origin at top-left. Y increases in downward direction 
 
@@ -339,26 +340,15 @@ framenum_box.on_submit(framenum_entry)
 
 fig.canvas.mpl_connect('button_press_event', on_click2)
 fig.canvas.mpl_connect('key_press_event', on_press)
-#%%
-from track2trajectory import camera
-
-cm_mtrxs = []
-cam_centres = []
-cameras = []
-for i,dltcoefs in enumerate([c1_dlt, c2_dlt, c3_dlt]):
-    cmmtrx, Z, ypr = transformation_matrix_from_dlt(dltcoefs)
-    camera_matrix = cmmtrx.T[:3,:]
-    camcentre = cam_centre_from_dlt(dltcoefs)
-    cam_centres.append(camcentre)
-    cm_mtrxs.append(camera_matrix)
-    cameras.append(camera.Camera(i+1, camcentre, fx, px, py, fx, fy, 
-                                 Kteax, camera_matrix[:3,-1], camera_matrix[:3,:3],
-                                 dist_coefs, camcentre, camera_matrix))
 
 #%%
-matchids = find_best_matches(dlt_coefs, c1_tracks_botleft, c2_tracks_botleft, c3_tracks_botleft)
+
+matchids = find_best_matches(dlt_coefs,
+                             c1_tracks_botleft,
+                             c2_tracks_botleft, c3_tracks_botleft, max_reproj=20)
 
 match_ids, counts = np.unique(np.array(matchids), return_counts=True)
+
 sort_inds = np.argsort(counts)[::-1]
 matchids_sorted = match_ids[sort_inds]
 sortcounts = counts[sort_inds]
@@ -370,7 +360,8 @@ for matchid, count in zip(matchids_sorted, sortcounts):
         valid_ids_counts.append((matchid, count))
 
 frequent_idmatches = list(filter(lambda X: X[-1]>10, valid_ids_counts))
-
+# Add a manually verified match now.
+frequent_idmatches.append(('nan-k2_34-k3_76', 10000))
 #%%
 c1_tracks = c1_tracks_botleft.copy()
 c2_tracks = c2_tracks_botleft.copy()
@@ -407,7 +398,7 @@ for fnum in frames:
         x,y,z = row_wise_dlt_reconstruct(uv_coods, dlt_coefs[:,caminds])
         trajectory_data.append([fnum, pointid, x, y,z])
 trajectories = pd.DataFrame(trajectory_data, columns=['frame', 'id', 'x','y','z'])
-trajectories.to_csv('xyz_2018-08-17_first51frames.csv')
+
 
 # #%%
 # plt.figure()
@@ -451,16 +442,19 @@ a01.scatter(c1_tracks_botleft.loc[:,'x'], c1_tracks_botleft.loc[:,'y'], edgecolo
             marker='o', s=40, facecolors='none', )
 a01.scatter(camera_uvs[0][:,0], camera_uvs[0][:,1], c=pointcolors, marker='+')
 a01.set_ylim(0,512); a01.set_xlim(0,640)
+a01.set_aspect(1)
 
 a02.scatter(c2_tracks_botleft.loc[:,'x'], c2_tracks_botleft.loc[:,'y'], edgecolors='r',
             marker='o', s=40, facecolors='none', )
 a02.scatter(camera_uvs[1][:,0], camera_uvs[1][:,1], c=pointcolors, marker='+')
 a02.set_ylim(0,512);a02.set_xlim(0,640)
+a02.set_aspect(1)
 
 a03.scatter(c3_tracks_botleft.loc[:,'x'], c3_tracks_botleft.loc[:,'y'], edgecolors='r',
             marker='o', s=40, facecolors='none', )
 a03.scatter(camera_uvs[2][:,0], camera_uvs[2][:,1], c=pointcolors, marker='+')
 a03.set_ylim(0,512);a03.set_xlim(0,640)
+a03.set_aspect(1)
 
 #%%
 # Now convert the xyz points from camera coordinate system to LiDAR coordinate system. 
@@ -472,8 +466,60 @@ A = np.array(([-0.7533, 0.6353, -0.1699, -1.7994],
 # Bring the 3d points in camera frame to LiDAR frame. 
 
 traj_xyz_homog = np.column_stack((trajectories.loc[:,['x','y','z']].to_numpy(), np.ones(trajectories.shape[0])))
-traj_lidarframe = np.apply_along_axis(lambda X: np.matmul(A, X), 1, traj_xyz_homog )[:,:-1]
+traj_lidarframe = np.apply_along_axis(lambda X: np.matmul(A, X), 1, traj_xyz_homog )
 trajectories_lidarframe = trajectories.copy()
 trajectories_lidarframe.loc[:,['x','y','z']] = traj_lidarframe
 
 
+
+#%%
+import pyvista as pv
+ 
+mesh = pv.read('../../../thermo_lidar_alignment/data/lidar_roi.ply')
+
+
+cmap = plt.get_cmap('jet')
+unique_pointids = np.unique(trajectories_lidarframe['id'])
+colors = [cmap(i) for i in np.linspace(0,1,len(unique_pointids))]
+pointid_to_color = {ptid: color for ptid, color in zip(unique_pointids, colors)}
+
+pointcolors = [pointid_to_color[each] for each in pointids]
+
+
+
+pl = pv.Plotter()
+pl.add_mesh(mesh)
+for i,(trajid, subdf) in enumerate(trajectories_lidarframe.groupby('id')):
+    xyz = subdf.loc[:,['x','y','z']].to_numpy()
+    pl.add_points(xyz, color=colors[i], render_points_as_spheres=True, point_size=20)
+pl.show()
+#%%
+plt.figure()
+a00 = plt.subplot(111)
+for groupid, subdf  in c3_tracks_botleft.groupby('id'):
+    a00.scatter(subdf.loc[:,'x'], subdf.loc[:,'y'], 
+                marker='o', s=40,  )
+    plt.text(subdf.loc[:,'x'].head(1), subdf.loc[:,'y'].head(1), str(subdf['id'].unique()))
+a00.scatter(camera_uvs[1][:,0], camera_uvs[1][:,1], c=pointcolors, marker='+')
+a00.set_ylim(0,512);a02.set_xlim(0,640)
+a00.set_aspect(1)
+
+#%%
+plt.figure()
+a101 = plt.subplot(121)
+for groupid, subdf  in c2_tracks_botleft.groupby('id'):
+    a101.scatter(subdf.loc[:,'x'], subdf.loc[:,'y'], 
+                marker='o', s=40,  label=groupid)
+plt.legend()
+    #plt.text(subdf.loc[:,'x'].head(1), subdf.loc[:,'y'].head(1), str(subdf['id'].unique()))
+a101.set_aspect(1); a101.set_ylim(0,550);a101.set_xlim(0,700)
+a102 = plt.subplot(122)
+a102.scatter(camera_uvs[1][:,0], camera_uvs[1][:,1], c=pointcolors, marker='+')
+a102.set_ylim(0,550);a102.set_xlim(0,700)
+a102.set_aspect(1)
+
+
+#%%
+
+trajectories.to_csv('trajectories_cameraframe_2018-08-17_P01-1000TMC_first200frames.csv')
+trajectories_lidarframe.to_csv('trajectories_lidarframe_2018-08-17_P01_1000TMC.csv')

@@ -501,8 +501,9 @@ A = np.array(([-0.7533, 0.6353, -0.1699, -1.7994],
 # Bring the 3d points in camera frame to LiDAR frame. 
 
 traj_xyz_homog = np.column_stack((trajectories.loc[:,['x','y','z']].to_numpy(), np.ones(trajectories.shape[0])))
-traj_lidarframe = np.apply_along_axis(lambda X: np.matmul(A, X), 1, traj_xyz_homog )[:,:-1]
+traj_lidarframe = np.apply_along_axis(lambda X: np.matmul(A, X), 1, traj_xyz_homog )
 trajectories_lidarframe = trajectories.copy()
 trajectories_lidarframe.loc[:,['x','y','z']] = traj_lidarframe
+trajectories_lidarframe.to_csv('2018-08-17_P')
 
 
