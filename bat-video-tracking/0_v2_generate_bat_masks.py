@@ -123,7 +123,7 @@ if not os.path.exists(masks_folder):
 
 bat_detection_masks = np.zeros(bground_subtr.shape, dtype=np.uint8)
 bat_centers_byframe = []
-for img in range(bground_subtr.shape[0]):
+for img in tqdm.tqdm(range(bground_subtr.shape[0])):
     bat_detection_masks[img,:,:] = make_yenthreshold_binary_mask(bground_subtr[img,:,:])
     mask_img_names = os.path.join(masks_folder, f'mask_{common_str}_{str(img)}.png')
     skimage.io.imsave(mask_img_names, bat_detection_masks[img,:,:]*255)

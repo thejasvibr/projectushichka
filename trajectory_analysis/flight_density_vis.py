@@ -106,3 +106,33 @@ plotter.add_volume(spatial_grid,
 plotter.add_mesh(rotmesh, opacity=0.5)
 plotter.add_mesh(new_bats)
 plotter.show()
+
+
+#%%
+# Plot each of the trajectories into the mesh volume
+folderpath = '..\\bat-video-tracking\\tracking_data\\2018-08-17\\'
+tmc1000 = pd.read_csv(os.path.join(folderpath,'trajectories_lidarframe_2018-08-17_P01_1000TMC.csv'))
+tmc7000 = pd.read_csv(os.path.join(folderpath,'trajectories_lidarframe_2018-08-17_P01_7000TMC.csv'))
+tmc12000 = pd.read_csv(os.path.join(folderpath, 'trajectories_lidarframe_2018-08-17_P01_12000TMC.csv'))
+tmc1000_xyz = tmc1000.loc[:,['x','y','z']].to_numpy()
+tmc7000_xyz = tmc7000.loc[:,['x','y','z']].to_numpy()
+tmc12000_xyz = tmc12000.loc[:,['x','y','z']].to_numpy()
+
+plot2 = pv.Plotter()
+plot2.add_mesh(mesh, opacity=0.5)
+plot2.camera.position = (2.13, -5.72, -0.57)
+plot2.camera.azimuth = -6
+plot2.camera.roll = -98
+plot2.camera.elevation = 0.5 #-15
+
+plot2.camera.view_angle = 45
+plot2.add_points(tmc1000_xyz , color='r', render_points_as_spheres=True, point_size=20)
+plot2.add_points(tmc7000_xyz , color='g', render_points_as_spheres=True, point_size=20)
+plot2.add_points(tmc12000_xyz , color='w', render_points_as_spheres=True, point_size=20)
+
+plot2.show()
+
+
+
+#%%
+

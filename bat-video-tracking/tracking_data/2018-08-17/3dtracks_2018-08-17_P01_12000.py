@@ -1,41 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Track matching to get 3d points 2018-08-17
-==========================================
-
-Track generation
-~~~~~~~~~~~~~~~~
-TrackMate (Fiji Plugin) was used to generate and correct 2D tracks. 
-The raw frames were first passed through an entropy filter with a 7 pixel
-disk radius in scikit-image. 
-
-
-Steps to get succesful 3D tracks
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-* Run TrackMate on Entropy image masks of thermal data frames
-* Run mask based tracking
-* Perform Linear Assignment Problem (LAP) tracking 
-* Manually correct the tracking results using the TrackScheme
-* Save output XML file and tracks to CSV file
-* Load tracks from CSV file and check once again for repeated assignments of the 
-  same point
-* Run track matching and generate trajectories
-* Check track matching by projecting the trajectories back onto all cameras to
-  see if there are any tracks/detections missing.
-
-Conda env
-~~~~~~~~~
-Activate the part2ushichka environment for this module. 
-
-Coodinate systems
-~~~~~~~~~~~~~~~~~
-Each package has a different 2D coordinate system output/expectation. 
-
-DLT based functions : origin at bottom-left. Y increases in upward direction
-opencv2 : origin at top-left. Y increases in downward direction 
-
-
-Created on Sat Aug 26 08:14:10 2023
+Triangulating and matching data for 2018-08-17 P01 12000 TMC
+============================================================
+Created on Mon Sep  4 23:51:58 2023
 
 @author: theja
 """
@@ -55,7 +22,7 @@ from scipy.spatial import distance
 import cv2
 #%%
 camids = ['K1', 'K2', 'K3']
-trackfiles = [glob.glob(os.path.join('entropy','masks',each,'*.csv'))[0] for each in camids]
+trackfiles = [glob.glob(os.path.join('P01_12000TMC','linked_tracks',each+'*.csv'))[0] for each in camids]
 camera_tracks = {each: pd.read_csv(filepaths, header=0,skiprows=[1,2,3]) for each, filepaths in zip(camids, trackfiles)}
 for camid, df in camera_tracks.items():
     df['cam_id'] = camid
@@ -139,36 +106,6 @@ c3_tracks_botleft['cid'] = 3
 #%%
 # Perform the corrections here itself initially 
 
-#### K1 corrections 
-# remove k1_10 on frame 43 and set id to k1_9
-relevant_row = np.logical_and(c1_tracks_botleft['frame']==43, c1_tracks_botleft['id']=='k1_10')
-c1_tracks_botleft.loc[c1_tracks_botleft[relevant_row].index,'id'] = 'k1_9'
-# set one of the double k1_10 entry to k1_9
-relevant_rows = np.logical_and(c1_tracks_botleft['frame']==44, c1_tracks_botleft['id']=='k1_10')
-wrong_k10_index = c1_tracks_botleft.loc[relevant_rows,:].sort_values('x').index[0]
-c1_tracks_botleft.loc[wrong_k10_index,'id'] = 'k1_9'
-# there's also been a switch of k1_9 from frame 45 onwards
-frames45_on = np.logical_and(c1_tracks_botleft['frame']>=45, c1_tracks_botleft['id']=='k1_10')
-c1_tracks_botleft.loc[frames45_on, 'id'] = 'k1_9'
-# mislabel of k1_9 --> k1_10 because of previous operation on frames 48, 49
-for frame in [48, 49]:
-    relevant_rows = np.logical_and(c1_tracks_botleft['frame']==frame, c1_tracks_botleft['id']=='k1_9')
-    relevant_ind = c1_tracks_botleft.loc[relevant_rows].sort_values('x').index[1]
-    c1_tracks_botleft.loc[relevant_ind, 'id'] = 'k1_10'
-
-##### K2 corrections
-
-k2_7_rows = c2_tracks_botleft[np.logical_and(c2_tracks_botleft['frame']==2, c2_tracks_botleft['id']=='k2_7')].sort_values('x').index
-c2_tracks_botleft = c2_tracks_botleft.drop(k2_7_rows[0])
-
-k2_5_rows = c2_tracks_botleft[np.logical_and(c2_tracks_botleft['frame']==5, c2_tracks_botleft['id']=='k2_5')].sort_values('x').index
-c2_tracks_botleft = c2_tracks_botleft.drop(k2_5_rows[1]) 
-
-k2_57_rows = c2_tracks_botleft[np.logical_and(c2_tracks_botleft['frame']==21, c2_tracks_botleft['id']=='k2_57')].sort_values('x').index
-c2_tracks_botleft = c2_tracks_botleft.drop(k2_57_rows[0]) 
- 
-
-
 # Check for repeats in ID within a frame. If there are any - print a notification
 for camdata in [c1_tracks_botleft, c2_tracks_botleft, c3_tracks_botleft]:
     for frame, framedata in camdata.groupby('frame'):
@@ -186,9 +123,9 @@ c1_dlt, c2_dlt, c3_dlt  = [dlt_coefs[:,i] for i in range(3)]
 #%%
 
 global fnum, k1_images, k2_images, k3_images
-k1_images = natsort.natsorted(glob.glob('entropy/cleaned/K1/*.png'))
-k2_images = natsort.natsorted(glob.glob('entropy/cleaned/K2/*.png'))
-k3_images = natsort.natsorted(glob.glob('entropy/cleaned/K3/*.png'))
+k1_images = natsort.natsorted(glob.glob('P01_12000TMC/cleaned/K1/*.png'))
+k2_images = natsort.natsorted(glob.glob('P01_12000TMC/cleaned/K2/*.png'))
+k3_images = natsort.natsorted(glob.glob('P01_12000TMC/cleaned/K3/*.png'))
 
 fnum = 0
 k1_frame = c1_tracks_botleft[c1_tracks_botleft['frame']==fnum]
@@ -385,7 +322,11 @@ for i,dltcoefs in enumerate([c1_dlt, c2_dlt, c3_dlt]):
                                  dist_coefs, camcentre, camera_matrix))
 
 #%%
-matchids = find_best_matches(dlt_coefs, c1_tracks_botleft, c2_tracks_botleft, c3_tracks_botleft)
+# remove cam3 data 
+c3_tracks_nan = c3_tracks_botleft.copy()
+c3_tracks_nan.loc[:,['x','y']] = np.nan
+
+matchids = find_best_matches(dlt_coefs, c1_tracks_botleft, c2_tracks_botleft, c3_tracks_nan, max_reproj=50)
 
 match_ids, counts = np.unique(np.array(matchids), return_counts=True)
 sort_inds = np.argsort(counts)[::-1]
@@ -398,7 +339,7 @@ for matchid, count in zip(matchids_sorted, sortcounts):
     if numnans < 2:
         valid_ids_counts.append((matchid, count))
 
-frequent_idmatches = list(filter(lambda X: X[-1]>10, valid_ids_counts))
+frequent_idmatches = list(filter(lambda X: X[-1]>5, valid_ids_counts))
 
 #%%
 c1_tracks = c1_tracks_botleft.copy()
@@ -436,7 +377,7 @@ for fnum in frames:
         x,y,z = row_wise_dlt_reconstruct(uv_coods, dlt_coefs[:,caminds])
         trajectory_data.append([fnum, pointid, x, y,z])
 trajectories = pd.DataFrame(trajectory_data, columns=['frame', 'id', 'x','y','z'])
-trajectories.to_csv('xyz_2018-08-17_first51frames.csv')
+
 
 # #%%
 # plt.figure()
@@ -487,8 +428,10 @@ a02.scatter(camera_uvs[1][:,0], camera_uvs[1][:,1], c=pointcolors, marker='+')
 a02.set_ylim(0,512);a02.set_xlim(0,640)
 
 a03.scatter(c3_tracks_botleft.loc[:,'x'], c3_tracks_botleft.loc[:,'y'], edgecolors='r',
-            marker='o', s=40, facecolors='none', )
-a03.scatter(camera_uvs[2][:,0], camera_uvs[2][:,1], c=pointcolors, marker='+')
+            marker='o', s=40, facecolors='none', label='projections')
+a03.scatter(camera_uvs[2][:,0], camera_uvs[2][:,1], c=pointcolors, marker='+',
+            label='detections')
+plt.legend()
 a03.set_ylim(0,512);a03.set_xlim(0,640)
 
 #%%
@@ -504,6 +447,6 @@ traj_xyz_homog = np.column_stack((trajectories.loc[:,['x','y','z']].to_numpy(), 
 traj_lidarframe = np.apply_along_axis(lambda X: np.matmul(A, X), 1, traj_xyz_homog )
 trajectories_lidarframe = trajectories.copy()
 trajectories_lidarframe.loc[:,['x','y','z']] = traj_lidarframe
-trajectories_lidarframe.to_csv('trajectories_lidarframe_2018-08-17_P01_7000TMC.csv')
+trajectories_lidarframe.to_csv('trajectories_lidarframe_2018-08-17_P01_12000TMC.csv')
 
 
