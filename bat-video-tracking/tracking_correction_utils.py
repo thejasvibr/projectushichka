@@ -9,6 +9,8 @@ Created on Mon Aug 21 09:51:30 2023
 """
 import numpy as np 
 import pandas as pd 
+from scipy.interpolate import interp1d
+from scipy.spatial import distance
 
 
 
@@ -54,3 +56,62 @@ def replace_or_add_row(main_df, new_data):
             main_df.loc[new_row,'row'] = row
             main_df.loc[new_row,'col'] = col
     return main_df
+
+
+
+
+def interpolate_xyz(subdf):
+    '''
+    Returns an interpolated xyz DataFrame and replaces missing spots 
+    with a quadratic spline. 
+    
+    Parameters
+    ----------
+    subdf : pd.DataFrame
+        With columns id, frame, x, y, z
+    
+    Returns 
+    -------
+    subdf_interp : pd.DataFrame
+        When there are no missing values a copy of the input subdf is returned.
+        When there are missing values a version of subdf with missing cells
+        interpolated is returned.
+    '''
+    nona_subdf = subdf.dropna()
+    if nona_subdf.shape[0]==0:
+        return nona_subdf
+    
+    minframe = nona_subdf['frame'].min()
+    maxframe = nona_subdf['frame'].max()
+    min_to_max = set(np.arange(minframe, maxframe+1))
+    current_frames = set(nona_subdf['frame'])
+    missing_frames = min_to_max - current_frames
+    if len(missing_frames) == 0:
+        return subdf.copy()
+    
+    interpolated_fns = {}
+    for axis in ['x','y','z']:
+        interpolated_fns[axis] = interp1d(nona_subdf['frame'], nona_subdf[axis], kind=2)
+    # now add new rows
+    subdf_interp = nona_subdf.copy().reset_index(drop=True)
+    for missed_frame in missing_frames:
+        last_index_plus1 = subdf_interp.index.max() + 1
+        subdf_interp.loc[last_index_plus1,'frame'] = missed_frame
+        for axis in ['x','y','z']:
+            subdf_interp.loc[last_index_plus1, axis] = interpolated_fns[axis](missed_frame)
+    subdf_interp['id'] = subdf['id'].unique()[0]
+    return subdf_interp.sort_values('frame')
+    
+
+def calc_speed(xyz, fps=25):
+    nrows = xyz.shape[0]
+    deltatime = 1/fps
+    speed_profile = []
+    for i in range(1,nrows):
+        try:
+            travelled_dist = distance.euclidean(xyz[i,:], xyz[i-1,:])
+            speed = travelled_dist/deltatime
+        except:
+            speed = np.nan
+        speed_profile.append(speed)
+    return speed_profile

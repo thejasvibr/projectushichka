@@ -54,6 +54,10 @@ import pandas as pd
 from scipy.spatial import distance_matrix as distmat
 from scipy.spatial import distance
 import cv2
+
+import sys
+sys.path.append('..\\..\\')
+from tracking_correction_utils import *
 #%%
 camids = ['K1', 'K2', 'K3']
 trackfiles = [glob.glob(os.path.join('P01_1000TMC','linked_tracks',each+'*.csv'))[0] for each in camids]
@@ -470,29 +474,9 @@ traj_lidarframe = np.apply_along_axis(lambda X: np.matmul(A, X), 1, traj_xyz_hom
 trajectories_lidarframe = trajectories.copy()
 trajectories_lidarframe.loc[:,['x','y','z']] = traj_lidarframe
 
+trajectories.to_csv('trajectories_cameraframe_2018-08-17_P01-1000TMC_first200frames.csv')
+trajectories_lidarframe.to_csv('trajectories_lidarframe_2018-08-17_P01_1000TMC.csv')
 
-
-#%%
-import pyvista as pv
- 
-mesh = pv.read('../../../thermo_lidar_alignment/data/lidar_roi.ply')
-
-
-cmap = plt.get_cmap('jet')
-unique_pointids = np.unique(trajectories_lidarframe['id'])
-colors = [cmap(i) for i in np.linspace(0,1,len(unique_pointids))]
-pointid_to_color = {ptid: color for ptid, color in zip(unique_pointids, colors)}
-
-pointcolors = [pointid_to_color[each] for each in pointids]
-
-
-
-pl = pv.Plotter()
-pl.add_mesh(mesh)
-for i,(trajid, subdf) in enumerate(trajectories_lidarframe.groupby('id')):
-    xyz = subdf.loc[:,['x','y','z']].to_numpy()
-    pl.add_points(xyz, color=colors[i], render_points_as_spheres=True, point_size=20)
-pl.show()
 #%%
 plt.figure()
 a00 = plt.subplot(111)
@@ -505,21 +489,68 @@ a00.set_ylim(0,512);a02.set_xlim(0,640)
 a00.set_aspect(1)
 
 #%%
-plt.figure()
-a101 = plt.subplot(121)
-for groupid, subdf  in c2_tracks_botleft.groupby('id'):
-    a101.scatter(subdf.loc[:,'x'], subdf.loc[:,'y'], 
-                marker='o', s=40,  label=groupid)
-plt.legend()
-    #plt.text(subdf.loc[:,'x'].head(1), subdf.loc[:,'y'].head(1), str(subdf['id'].unique()))
-a101.set_aspect(1); a101.set_ylim(0,550);a101.set_xlim(0,700)
-a102 = plt.subplot(122)
-a102.scatter(camera_uvs[1][:,0], camera_uvs[1][:,1], c=pointcolors, marker='+')
-a102.set_ylim(0,550);a102.set_xlim(0,700)
-a102.set_aspect(1)
-
-
 #%%
+# Visualise the output data to check that everything is as expected
+import pyvista as pv
 
-trajectories.to_csv('trajectories_cameraframe_2018-08-17_P01-1000TMC_first200frames.csv')
-trajectories_lidarframe.to_csv('trajectories_lidarframe_2018-08-17_P01_1000TMC.csv')
+
+datafolder = os.path.join('..\\..\\..\\thermo_lidar_alignment')
+mesh_path = os.path.join(datafolder, 'data','lidar_roi.ply')
+mesh = pv.read(mesh_path)
+
+folderpath = '.'
+tmc1000 = pd.read_csv(os.path.join(folderpath, 'trajectories_lidarframe_2018-08-17_P01_1000TMC.csv'))
+tmc1000_xyz = tmc1000.loc[:,['x','y','z']].to_numpy()
+
+plot2 = pv.Plotter()
+plot2.add_mesh(mesh, opacity=0.3)
+plot2.camera.position = (3.75, -2.05, -0.57)
+plot2.camera.azimuth = -5
+plot2.camera.roll = -100
+plot2.camera.elevation = 0.5 #-15
+
+plot2.camera.view_angle = 45
+
+cmap = plt.get_cmap('jet')
+unique_pointids = np.unique(tmc1000['id'])
+trajkeys = unique_pointids.copy()
+
+byid = tmc1000.groupby('id')
+valid_pointids = []
+for each in unique_pointids:
+    subdf = byid.get_group(each)
+    if np.all(np.isnan(subdf.loc[:,'x':'z'].to_numpy())):
+        pass
+    else:
+        valid_pointids.append(each)
+
+colors = [cmap(i) for i in np.linspace(0,1,len(valid_pointids))]
+pointid_to_color = {ptid: color for ptid, color in zip(valid_pointids, colors)}
+
+j = 0
+valid_trajpoints = {}
+for i, (trajkey, subdf) in enumerate(tmc1000.groupby('id')):
+    if trajkey in valid_pointids:
+        interp_df = interpolate_xyz(subdf)
+        xyz_points = interp_df.loc[:,['x','y','z']].to_numpy() 
+        if not np.all(np.isnan(xyz_points)):
+            print(trajkey)
+            valid_trajpoints[trajkey] = xyz_points
+            j += 1
+
+ii = 5
+
+
+trajkeys = list(valid_trajpoints.keys())
+plot2.add_points(valid_trajpoints[trajkeys[ii]],
+             color=colors[ii], render_points_as_spheres=True, point_size=20)
+
+
+
+
+xyz_points = byid.get_group(trajkeys[ii]).sort_values('frame').loc[:,['x','y','z']].to_numpy()
+plt.figure()
+plt.plot(byid.get_group(trajkeys[ii]).sort_values('frame')['frame'][1:],calc_speed(xyz_points))
+
+plot2.show()
+

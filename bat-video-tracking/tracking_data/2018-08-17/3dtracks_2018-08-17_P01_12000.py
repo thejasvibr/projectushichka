@@ -20,9 +20,13 @@ import pandas as pd
 from scipy.spatial import distance_matrix as distmat
 from scipy.spatial import distance
 import cv2
+import sys
+sys.path.append('..\\..\\')
+from tracking_correction_utils import *
 #%%
 camids = ['K1', 'K2', 'K3']
 trackfiles = [glob.glob(os.path.join('P01_12000TMC','linked_tracks',each+'*.csv'))[0] for each in camids]
+trackfiles[0] = 'P01_12000TMC\\linked_tracks\\K1_2018-08-17_P01_12000TMC_v3.csv'
 camera_tracks = {each: pd.read_csv(filepaths, header=0,skiprows=[1,2,3]) for each, filepaths in zip(camids, trackfiles)}
 for camid, df in camera_tracks.items():
     df['cam_id'] = camid
@@ -305,28 +309,14 @@ framenum_box.on_submit(framenum_entry)
 
 fig.canvas.mpl_connect('button_press_event', on_click2)
 fig.canvas.mpl_connect('key_press_event', on_press)
-#%%
-from track2trajectory import camera
-
-cm_mtrxs = []
-cam_centres = []
-cameras = []
-for i,dltcoefs in enumerate([c1_dlt, c2_dlt, c3_dlt]):
-    cmmtrx, Z, ypr = transformation_matrix_from_dlt(dltcoefs)
-    camera_matrix = cmmtrx.T[:3,:]
-    camcentre = cam_centre_from_dlt(dltcoefs)
-    cam_centres.append(camcentre)
-    cm_mtrxs.append(camera_matrix)
-    cameras.append(camera.Camera(i+1, camcentre, fx, px, py, fx, fy, 
-                                 Kteax, camera_matrix[:3,-1], camera_matrix[:3,:3],
-                                 dist_coefs, camcentre, camera_matrix))
 
 #%%
-# remove cam3 data 
-c3_tracks_nan = c3_tracks_botleft.copy()
-c3_tracks_nan.loc[:,['x','y']] = np.nan
 
-matchids = find_best_matches(dlt_coefs, c1_tracks_botleft, c2_tracks_botleft, c3_tracks_nan, max_reproj=50)
+# # remove cam3 data 
+# c3_tracks_nan = c3_tracks_botleft.copy()
+# c3_tracks_nan.loc[:,['x','y']] = np.nan
+
+matchids = find_best_matches(dlt_coefs, c1_tracks_botleft, c2_tracks_botleft, c3_tracks_botleft, max_reproj=50)
 
 match_ids, counts = np.unique(np.array(matchids), return_counts=True)
 sort_inds = np.argsort(counts)[::-1]
@@ -358,6 +348,7 @@ for (matchid, count) in valid_ids_counts:
     all_match_sets.append(set(matchid.split('-')))
 
 intersecting = []
+
 for i, target_set in enumerate(all_match_sets[:-1]):
     for test_set in all_match_sets[i+1:]:
         overlap = target_set.intersection(test_set)
@@ -433,7 +424,6 @@ a03.scatter(camera_uvs[2][:,0], camera_uvs[2][:,1], c=pointcolors, marker='+',
             label='detections')
 plt.legend()
 a03.set_ylim(0,512);a03.set_xlim(0,640)
-
 #%%
 # Now convert the xyz points from camera coordinate system to LiDAR coordinate system. 
 
@@ -447,6 +437,71 @@ traj_xyz_homog = np.column_stack((trajectories.loc[:,['x','y','z']].to_numpy(), 
 traj_lidarframe = np.apply_along_axis(lambda X: np.matmul(A, X), 1, traj_xyz_homog )
 trajectories_lidarframe = trajectories.copy()
 trajectories_lidarframe.loc[:,['x','y','z']] = traj_lidarframe
+
 trajectories_lidarframe.to_csv('trajectories_lidarframe_2018-08-17_P01_12000TMC.csv')
 
+
+#%%
+# Visualise the output data to check that everything is as expected
+import pyvista as pv
+
+
+datafolder = os.path.join('..\\..\\..\\thermo_lidar_alignment')
+mesh_path = os.path.join(datafolder, 'data','lidar_roi.ply')
+mesh = pv.read(mesh_path)
+
+folderpath = '.'
+tmc12000 = pd.read_csv(os.path.join(folderpath, 'trajectories_lidarframe_2018-08-17_P01_12000TMC.csv'))
+tmc12000_xyz = tmc12000.loc[:,['x','y','z']].to_numpy()
+
+plot2 = pv.Plotter()
+plot2.add_mesh(mesh, opacity=0.3)
+plot2.camera.position = (3.75, -2.05, -0.57)
+plot2.camera.azimuth = -5
+plot2.camera.roll = -100
+plot2.camera.elevation = 0.5 #-15
+
+plot2.camera.view_angle = 45
+
+cmap = plt.get_cmap('jet')
+unique_pointids = np.unique(tmc12000['id'])
+trajkeys = unique_pointids.copy()
+
+byid = tmc12000.groupby('id')
+valid_pointids = []
+for each in unique_pointids:
+    subdf = byid.get_group(each)
+    if np.all(np.isnan(subdf.loc[:,'x':'z'].to_numpy())):
+        pass
+    else:
+        valid_pointids.append(each)
+
+colors = [cmap(i) for i in np.linspace(0,1,len(valid_pointids))]
+pointid_to_color = {ptid: color for ptid, color in zip(valid_pointids, colors)}
+
+j = 0
+valid_trajpoints = {}
+for i, (trajkey, subdf) in enumerate(tmc12000.groupby('id')):
+    if trajkey in valid_pointids:
+        interp_df = interpolate_xyz(subdf)
+        xyz_points = interp_df.loc[:,['x','y','z']].to_numpy() 
+        if not np.all(np.isnan(xyz_points)):
+            print(trajkey)
+            valid_trajpoints[trajkey] = xyz_points
+            j += 1
+
+ii = 12
+
+
+trajkeys = list(valid_trajpoints.keys())
+plot2.add_points(valid_trajpoints[trajkeys[ii]],
+             color=colors[ii], render_points_as_spheres=True, point_size=20)
+
+
+xyz_points = byid.get_group(trajkeys[ii]).sort_values('frame').loc[:,['x','y','z']].to_numpy()
+plt.figure()
+plt.plot(byid.get_group(trajkeys[ii]).sort_values('frame')['frame'][1:],calc_speed(xyz_points))
+
+
+plot2.show()
 
