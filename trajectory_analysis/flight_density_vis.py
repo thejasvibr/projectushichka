@@ -147,9 +147,9 @@ def keyboard_callback():
     print(plot2.camera.view_angle)
     
 plot2.add_mesh(mesh, opacity=0.3)
-plot2.camera.position = (3.75, -2.05, -0.57)
+plot2.camera.position = (-4.0658486275620795, 0.8678076888611709, 25) #(3.75, -2.05, -0.57)
 plot2.camera.azimuth = -5
-plot2.camera.roll = -100
+plot2.camera.roll = -66
 plot2.camera.elevation = 0.5 #-15
 
 plot2.camera.view_angle = 45
@@ -170,25 +170,38 @@ camera['elevation'] = 0.5 #-15
 camera['view_angle'] = 45
 
 camera2 = {}
-camera2['position'] = (-3.16, -1.13, 19.22)
+camera2['position'] = (-4, 1, 19.22)
 camera2['azimuth'] = -5
 camera2['roll']= -66
 camera2['elevation'] = 0.5 #-15
 camera2['view_angle'] = 45
 
 
+camera3 = {}
+camera3['position'] = (-1.0658486275620795, 1.5, 20)
+camera3['azimuth'] = -5
+camera3['roll']= -69
+camera3['elevation'] = 0.5 #-15
+camera3['view_angle'] = 45
+    
+
 generate_incave_video(mesh, tmc1000, camera, '2018-08-17_P01-1000TMC', fps=25)
-generate_incave_video(mesh, tmc1000, camera2, '2018-08-17_P01-1000TMC_top', fps=25)
+generate_incave_video(mesh, tmc1000, camera3, '2018-08-17_P01-1000TMC_top', fps=25)
 
 generate_incave_video(mesh, tmc12000, camera, '2018-08-17_P01-12000TMC', fps=25)    
-generate_incave_video(mesh, tmc12000, camera2, '2018-08-17_P01-12000TMC_top', fps=25)
-
+generate_incave_video(mesh, tmc12000, camera3, '2018-08-17_P01-12000TMC_top', fps=25)
 #%%
 from moviepy.editor import VideoFileClip, clips_array, vfx
-clip1 = VideoFileClip("2018-08-17_P01-1000TMC_top.mp4").margin(10) # add 10px contour
-clip2 = VideoFileClip("2018-08-17_P01-1000TMC.mp4").margin(10) # add 10px contour
-clip3 = VideoFileClip("2018-08-17_P01-12000TMC_top.mp4").margin(10) # add 10px contour
-clip4 = VideoFileClip("2018-08-17_P01-12000TMC.mp4").margin(10) # add 10px contour
+clip1 = VideoFileClip("2018-08-17_P01-1000TMC_top.gif").margin(10) # add 10px contour
+clip2 = VideoFileClip("2018-08-17_P01-1000TMC.gif").margin(10) # add 10px contour
+clip3 = VideoFileClip("2018-08-17_P01-12000TMC_top.gif").margin(10) # add 10px contour
+clip4 = VideoFileClip("2018-08-17_P01-12000TMC.gif").margin(10) # add 10px contour
 final_clip = clips_array([[clip1, clip3],
                           [clip2, clip4]])
-final_clip.resize(width=2048).write_videofile("my_stack.mp4")
+final_clip.resize(width=2048).write_gif("2018-08-17_P01_1000-and-12000TMC.gif", fps=25)
+
+
+final_clip2 = clips_array([[clip1, clip3]])
+final_clip2.resize(width=2048).write_videofile("top_2018-08-17_P01_1000-and-12000TMC.mp4")
+
+

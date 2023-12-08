@@ -425,7 +425,7 @@ for fnum in frames:
         x,y,z = row_wise_dlt_reconstruct(uv_coods, dlt_coefs[:,caminds])
         trajectory_data.append([fnum, pointid, x, y,z])
 trajectories = pd.DataFrame(trajectory_data, columns=['frame', 'id', 'x','y','z'])
-trajectories.to_csv('xyz_2018-08-17_first51frames.csv')
+# trajectories.to_csv('xyz_2018-08-17_first51frames.csv')
 
 # #%%
 # plt.figure()
@@ -545,7 +545,7 @@ for i, (trajkey, subdf) in enumerate(tmc7000.groupby('id')):
             valid_trajpoints[trajkey] = xyz_points
             j += 1
 
-ii = 7
+ii = 6
 
 
 trajkeys = list(valid_trajpoints.keys())

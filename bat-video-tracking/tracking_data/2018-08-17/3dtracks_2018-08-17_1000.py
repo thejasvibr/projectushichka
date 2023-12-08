@@ -404,6 +404,11 @@ for fnum in frames:
 trajectories = pd.DataFrame(trajectory_data, columns=['frame', 'id', 'x','y','z'])
 
 
+
+matched_points = c123_tracks.copy()
+matched_points.columns = ['point_id', 'frame', 'x','y', 'camera']
+matched_points.to_csv('matched_2D-detections_2018-08-17_P01_1000_first200frames.csv')
+
 # #%%
 # plt.figure()
 # a0 = plt.subplot(111, projection='3d')

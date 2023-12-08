@@ -37,6 +37,9 @@ def generate_incave_video(mesh, traj_data, cam_props, output_vidname, fps=25, **
     radius : float>0, optional
         Radius of sphere used to represent bat trajectories.
         Defaults to 0.15 m
+    writegif : bool, True
+        Whether to write a gif or mp4 file. 
+        Defaults to True.
 
     Returns
     -------
@@ -47,7 +50,10 @@ def generate_incave_video(mesh, traj_data, cam_props, output_vidname, fps=25, **
     Based heavily ont he PyVista example page here
     https://docs.pyvista.org/version/stable/examples/02-plot/movie.html
     '''
-    output_video = output_vidname + '.mp4'
+    if kwargs.get('writegif', True):
+        output_video = output_vidname + '.gif'
+    else:
+        output_video = output_vidname + '.mp4'
         
     
     unique_pointids = np.unique(traj_data['id'])
@@ -65,7 +71,10 @@ def generate_incave_video(mesh, traj_data, cam_props, output_vidname, fps=25, **
     id2colormap = {batid : idcolor for batid, idcolor in zip(valid_pointids, colors)}
     
     plotter = pv.Plotter()
-    plotter.open_movie(output_video, quality=9, framerate=fps)
+    if kwargs.get('writegif', True):
+        plotter.open_gif(output_video, fps=fps)
+    else:
+        plotter.open_movie(output_video, framerate=fps)
 
     
     
