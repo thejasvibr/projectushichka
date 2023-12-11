@@ -62,9 +62,9 @@ points.rotate_z(rotation_angle, inplace=True)
 #%% This is commented out on purpose -  uncomment to run!!!!!
 # save the rotated mesh and trajectory points
 # pv.save_meshio('orlova_chuka_nice_coodsystem.ply', mesh)
-# tmc1000_rotated = tmc1000.copy()
-# tmc1000_rotated.loc[:,'x':'z'] = points.points
-# tmc1000_rotated.loc[:,'frame':].to_csv('2018-08-17_P01_1000TMC_200frames_nicecood_system.csv')
+tmc1000_rotated = tmc1000.copy()
+tmc1000_rotated.loc[:,'x':'z'] = points.points
+tmc1000_rotated.loc[:,'frame':].to_csv('2018-08-17_P01_1000TMC_200frames_nicecood_system.csv')
 #%%
 target_dataset = tmc7000_xyz
 
@@ -102,15 +102,15 @@ thistrajpoints = pv.PolyData(thistraj_xyz)
 thistrajpoints.rotate_z(rotation_angle, inplace=True)
 
 
-multiplot = pv.Plotter()
+# multiplot = pv.Plotter()
 
-median_z = np.nanmedian(thistraj['z'])
+# median_z = np.nanmedian(thistraj['z'])
 
-multiplot.add_mesh(mesh, opacity=0.3)
-multiplot.add_points(thistrajpoints , color='r', render_points_as_spheres=True, point_size=10)
-projected = thistrajpoints.project_points_to_plane(origin=[0,0,median_z])
-multiplot.add_mesh(projected, color='g')
-multiplot.show()
+# multiplot.add_mesh(mesh, opacity=0.3)
+# multiplot.add_points(thistrajpoints , color='r', render_points_as_spheres=True, point_size=10)
+# projected = thistrajpoints.project_points_to_plane(origin=[0,0,median_z])
+# multiplot.add_mesh(projected, color='g')
+# multiplot.show()
 
 #%% 
 # How 2D is the analysis actually? 
@@ -130,7 +130,7 @@ outup  = tmc1000.groupby('id').apply(xyz_minmax)
 ids = tmc1000_rotated['id'].unique()
 rot_byid = tmc1000_rotated.groupby('id')
 
-traj_index = 0
+traj_index = 1
 
 thistraj = rot_byid.get_group(ids[traj_index])
 thistraj_points = thistraj.loc[:,'x':'z'].to_numpy()
@@ -155,8 +155,8 @@ v_xyz = np.apply_along_axis(np.diff, 0, thistraj_points)/frame_durn
 a_xyz = np.apply_along_axis(np.diff, 0, v_xyz)/frame_durn
 ax, ay, az = [abs(a_xyz[:,i]) for i in range(3)]
 # coarsely calculate the roll angle:
-factor = 1 # IMPORTANT
-roll_angle = np.arctan2(ax+ay,az + factor*9.81)
+factor = 10 # IMPORTANT---THIS IS JUST SOME KIND OF SHORT-TERM FIXXXXXXX
+roll_angle = np.arctan2(ax+ay, az + factor*9.81)
 roll_angle_degrees = np.degrees(roll_angle)
 
 plt.figure()
@@ -171,77 +171,94 @@ plt.legend()
 # to calculate accelaration 
 # 
 
-i = 5
+from egocentric_axes import *
 
-plot3 = pv.Plotter()
+i = 30
+
+# plot3 = pv.Plotter()
     
-plot3.add_mesh(mesh, opacity=0.3)
-plot3.camera_position = 'xz' # (0, -10, 0) #(-4.0658486275620795, 0.8678076888611709, 25) #(3.75, -2.05, -0.57)
-plot3.camera.position = (0,-5,0)
+# plot3.add_mesh(mesh, opacity=0.3)
+# plot3.camera_position = 'xz' # (0, -10, 0) #(-4.0658486275620795, 0.8678076888611709, 25) #(3.75, -2.05, -0.57)
+# plot3.camera.position = (0,-5,0)
 
-plot3.camera.view_angle = 60
-plot3.add_points(thistraj_points , color='r', render_points_as_spheres=True, point_size=10)
+# plot3.camera.view_angle = 60
+# plot3.add_points(thistraj_points , color='r', render_points_as_spheres=True, point_size=10)
 
-axis_arrows = [pv.Arrow(np.zeros(3), each) for each in [[1,0,0], [0,1,0], [0,0,1]]]
-for c ,each in zip(['r','g','b'],axis_arrows):
-    plot3.add_mesh(each, color=c)
+# axis_arrows = [pv.Arrow(np.zeros(3), each) for each in [[1,0,0], [0,1,0], [0,0,1]]]
+# for c ,each in zip(['r','g','b'],axis_arrows):
+#     plot3.add_mesh(each, color=c)
 
-egocentric_axes = np.array([[1,0,0],
-                            [0,1,0],
-                            [0,0,1]])
-# align y-axis to flight direction 
-align_to_y, err = transform.Rotation.align_vectors(thistraj_dirvectors[i,:].reshape(1,3),
-                                              np.array([0,1,0]).reshape(1,3))
-aligned_yaxis = align_to_y.apply([0,1,0])
-# Also rotate x-axis to this level
-# rotated_xaxis = align_to_y.apply([1,0,0])
-# rotated_zaxis = align_to_y.apply([0,0,1])
-rotated_xyz = align_to_y.apply(np.eye(3))
+# # now generate the ego-centric axes considering flight direction and roll
+ego_xyz = calculate_2egocentric_xyz(thistraj_dirvectors[i-1,:], -roll_angle[i-2])
 
-align_to_roll = transform.Rotation.from_euler('y', -roll_angle[i-2],)
+# ego_arrows = [pv.Arrow(thistraj_points[i,:], ego_xyz[j,:]) for j in range(3)]
+# ego_on_origin = [pv.Arrow( [0,0,0], ego_xyz[j,:], shaft_radius=0.01, tip_radius=0.05) for j in range(3)]
 
-# now fix the roll by estimating the required rotations around the y-axis
-# if we 
+# for c ,each, every in zip(['r','g','b'], ego_arrows, ego_on_origin):
+#     plot3.add_mesh(each, color=c)
+#     plot3.add_mesh(every, color=c, )
+#     #plot3.add_mesh(each2, color=c, )
 
-plot3.add_mesh(pv.Arrow(thistraj_points[i,:], rotated_xyz[0,:]),'r')
-plot3.add_mesh(pv.Arrow(thistraj_points[i,:], rotated_xyz[1,:]),'g')
-plot3.add_mesh(pv.Arrow(thistraj_points[i,:], rotated_xyz[2,:]),'b')
-
-
-
-# THE PROPER WAY FINALLY -  NOT REALLY
-# First find the flight direction and set that to the y-axis 
-# The global +Z is the gravity vector and get the 'non-egocentric' x-axis to 
-# the orthogonal between the +Z and flight direction. 
-# Egocentric +Z is orthogonal to the non-ego X and ego Y axis. 
-# Rotate all egocentric axes about the y-axis by roll angle. 
-
-nonego_x = np.cross(np.array([0,0,-1]), 
-                    aligned_yaxis)
-ego_z = np.cross(nonego_x, aligned_yaxis)
-nonrot_xyz = np.row_stack((nonego_x, aligned_yaxis, ego_z))
-rot_xyz = align_to_roll.apply(nonrot_xyz)
-
+# plot3.show()
 
 #
-# fORGT about getting the coordinate system perfectly aligned. 
-# Where do the bats keep the cave wals (and each other) when they're flying
-#spheres = [pv.Sphere(radius=r, center=thistraj_points[i,:]) for r in radius]
-plot3.show()
+# What I actually need to do is to run a line from the ego-centric coordinates 
+# at various azimuth and elevation angles - and to then calculate the distance
+# between the intersection and the centre of the bat.
+rotation_mat, ssd = transform.Rotation.align_vectors(ego_xyz, np.eye(3))
 
-#%%
+#
+import tqdm
+sp0  = pv.Sphere(radius=0.15, center=thistraj_points[i,:],
+                direction = ego_xyz[2,:], 
+                theta_resolution=12, 
+                phi_resolution=6)
 
-from scipy.spatial import KDTree
+all_intersection_points = []
+all_intersection_rays = []
+
+for xyz in tqdm.tqdm(sp.points):    
+    extended_endpoint =  thistraj_points[i,:] + (xyz-thistraj_points[i,:])*100
+    points, ind = mesh.ray_trace(thistraj_points[i,:], extended_endpoint)
+    intersection = pv.PolyData(points)
+    all_intersection_points.append(intersection)
+    ray = pv.Line(thistraj_points[i,:],
+                  extended_endpoint)
+    all_intersection_rays.append(ray)
+
+ego_arrows = [pv.Arrow(thistraj_points[i,:], ego_xyz[j,:]) for j in range(3)]
+
+plot4 = pv.Plotter()
+plot4.add_mesh(mesh, opacity=0.3)
+plot4.add_points(thistraj_points , color='r', render_points_as_spheres=True, point_size=10)
+
+for c ,each, every in zip(['r','g','b'],axis_arrows, ego_arrows):
+    plot4.add_mesh(each, color=c)
+    plot4.add_mesh(every, color=c)
+
+# ray1 = pv.Line(thistraj_points[i,:], (sp.points[0,:]-thistraj_points[i,:])*10)
+
+for each_int, each_ray in zip(all_intersection_points, all_intersection_rays):
+    if each_int.points.size>0:
+        plot4.add_mesh(each_int,
+                        color="maroon", point_size=25
+                        , label="Intersection Points")
+    plot4.add_mesh(each_ray, line_width=2, color='k')
+
+#plot4.add_mesh(ray1, line_width=1, color='g')
+
+plot4.add_mesh(sp)
+plot4.camera_position = 'xz' # (0, -10, 0) #(-4.0658486275620795, 0.8678076888611709, 25) #(3.75, -2.05, -0.57)
+plot4.camera.position = (0,-5,0)
+plot4.camera.view_angle = 60
+plot4.show()
 
 
-
-
-# the direction of the sphere is wrong for now - but yes...
-sensory_range = pv.Sphere(radius=0.15, direction=ego_z, 
-                          center=thistraj_points[i,:], theta_resolution=30, 
-                          phi_resolution=30)
-tree = KDTree(mesh.points)
-d_kdtree, idx = tree.query(sensory_range.points)
-sensory_range["distances"] = d_kdtree
-
-print(np.median(d_kdtree))
+# from scipy.spatial import KDTree
+# # the direction of the sphere is wrong for now - but yes...
+# sensory_range = pv.Sphere(radius=0.15, direction=ego_xyz[2,:], 
+#                           center=thistraj_points[i,:], theta_resolution=12, 
+#                           phi_resolution=15)
+# tree = KDTree(mesh.points)
+# d_kdtree, idx = tree.query(sensory_range.points)
+# sensory_range["distances"] = d_kdtree
