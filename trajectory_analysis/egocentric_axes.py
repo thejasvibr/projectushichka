@@ -99,10 +99,10 @@ def make_rays(phi_vals=np.linspace(0,360,9),
     
     all_rays = np.array(all_ray_vectos)
     all_rays[np.abs(all_rays)<1e-15] = 0
-    # simplify as all_rays has repeats 
-    unique_rays, row_inds = np.unique(all_rays, axis=0, return_index=True)
-    unique_phi_theta = [theta_phi_combis[each] for each in row_inds]
-    return unique_phi_theta, unique_rays
+    # # simplify as all_rays has repeats 
+    # unique_rays, row_inds = np.unique(all_rays, axis=0, return_index=True)
+    # unique_phi_theta = [theta_phi_combis[each] for each in row_inds]
+    return theta_phi_combis, all_rays
 
 
 
