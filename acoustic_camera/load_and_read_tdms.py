@@ -11,11 +11,16 @@ Avisoft-acoustic camera correspondence list
 | 2023-12-18_18-11-54      | ch3_T0000035             |
 | 2023-12-18_18-11-34      | ch3\\T0000034            |
 | 2023-12-18_18-10-37      | ch2\\T0000033            |
-2023-12-18_18-10-06  | ch3\\T0000032.wav
-2023-12-18_18-09-29  | ch3\T0000031.wav
-2023-12-18_18-09-02  | ch3\\T0000030.wav
-
-
+| 2023-12-18_18-10-06  | ch3\\T0000032.wav 
+| 2023-12-18_18-09-29  | ch3\T0000031.wav
+| 2023-12-18_18-09-02  | ch3\\T0000030.wav
+| 2023-12-18_18-01-55  |  ch3\\T0000028.wav
+| 2023-12-18_17-58-14  | ch3\\T0000026.wav
+| 2023-12-18_17-57-36  | ch3\\T0000025.wav
+| 2023-12-18_17-57-19 | ch3\\T0000024.wav
+| 2023-12-18_17-56-58 | ch3\\T0000023.wav
+| 2023-12-18_17-55-48 | ch3\\T0000022.wav |
+| 2023-12-18_17-55-25|ch3\\T0000019.wav| ~ 7 sec in the video - tehre's upto 3 spots
 @author: theja
 """
 
@@ -26,10 +31,13 @@ import numpy as np
 import scipy.io as io
 from nptdms import TdmsFile
 from skimage.transform import resize
+import sounddevice as sd
 import scipy.signal as signal 
 import os
 from datetime import datetime as dt
 import tqdm
+
+to_dB = lambda X: 20*np.log10(X)
 
 tdms_files = glob.glob('2023-12-18-Nuernbergzoo_arjanboonman/*.tdms')
 
@@ -37,7 +45,7 @@ tdms_files = glob.glob('2023-12-18-Nuernbergzoo_arjanboonman/*.tdms')
 # 2023-12-18_17-55-25 is good (2-3 bats a time)
 # single bat: 17-47-03
 #
-current_file = tdms_files[-8]
+current_file = tdms_files[16]
 tdms_path_name = os.path.split(current_file)[-1][:-5]
 
 tdms_file = TdmsFile.read(current_file)
@@ -65,7 +73,7 @@ print(tdms_path_name)
 # Try to align the acoustic cam audio and the known 500kHz audio data
 all_audio_files = glob.glob('ch3\*.WAV')
 creation_times = [dt.fromtimestamp(os.path.getctime(each)) for each in all_audio_files]
-audio_file_path = all_audio_files[-8]
+audio_file_path = all_audio_files[16]
 audio_file_savename = audio_file_path.replace('\\','_')[:-4]
 fs_avisoft, raw_avisoft = io.wavfile.read(audio_file_path)
 print(audio_file_savename)
@@ -116,25 +124,38 @@ avisoft_full_start = -timestart_relavisoft
 #t_startavisoft 
 #%%
 plt.figure()
-a1 = plt.subplot(211)
+a1 = plt.subplot(411)
 plt.specgram(full_audio, Fs=fs,  NFFT=512, noverlap=256)
-plt.ylim(0,2000)
+plt.ylim(0,8e3)
+plt.subplot(412, sharex=a1)
+plt.plot(np.linspace(0,full_audio.size/fs,full_audio.size), full_audio)
 
-a2 = plt.subplot(212, sharex=a1)
+
+a2 = plt.subplot(413, sharex=a1)
 plt.specgram(downsampled_audio, Fs=fs, NFFT=512, noverlap=256,
              xextent=[avisoft_full_start, avisoft_full_start+ downsampled_audio.size/fs])
-plt.ylim(0,2000)
+plt.ylim(0,8e3)
 
+plt.subplot(414, sharex=a1)
+plt.plot(np.linspace(0,downsampled_audio.size/fs,downsampled_audio.size)+avisoft_full_start,
+                                                 downsampled_audio)
+#%%
+# Make a stereo wav file with the aligned audio tracks to check again. 
+tstartstop_both = np.array([[0, full_audio.size/fs],
+                             [avisoft_full_start,
+                                     avisoft_full_start+downsampled_audio.size/fs]])
 
+tstartstop_both -= tstartstop_both.min()
+final_size = int(tstartstop_both.max()*fs) + 100
+stereo_track = np.zeros((final_size,2))
 
-# #%% Align the overall rms profile:
-# window_size = int(0.02*fs)
-# overlap_frac = int(0.99*window_size)
-# avi_spec, avi_f, avi_t, _ = plt.specgram(downsampled_audio,
-#                                              Fs=fs, NFFT=window_size, noverlap=overlap_frac);
-# accam_spec, accam_f, accam_t, _ = plt.specgram(full_audio[int(-2*fs):],
-#                                              Fs=fs, NFFT=window_size, noverlap=overlap_frac);
-# plt.close()
+tstastop_indices = np.int64(tstartstop_both*fs)
+tstastop_indices[0,1] = tstastop_indices[0,0] + full_audio.size
+tstastop_indices[1,1] = tstastop_indices[1,0] + downsampled_audio.size
+# Track 1 is the acoustic camera central microphone
+stereo_track[tstastop_indices[0,0]:tstastop_indices[0,1],0] += full_audio
+stereo_track[tstastop_indices[1,0]:tstastop_indices[1,1],1] += downsampled_audio
+io.wavfile.write(f'{tdms_path_name}_aligned_stereo_track.wav', fs, stereo_track)
 
 #%%
 for target  in ['camera_frames', 'beam_images']:
@@ -189,6 +210,21 @@ filtered_cam = filtered_cam**2
 
 
 #%%
+
+def clip_image_dynamicrange(image, dynamic_range=80, good_dyn_range=3):
+    '''Converts image to dB scale, normalises
+    to highest pixel value and clips to the set 
+    dynamic range. 
+    '''
+    dB_image = to_dB(image)
+    dB_image -= np.max(dB_image)
+    if np.max(dB_image)-np.min(dB_image)<=good_dyn_range:
+        dB_image[:,:] = -dynamic_range
+    else:
+        dB_image[dB_image<-dynamic_range] = -dynamic_range
+
+    return dB_image
+#%%
 b,a = signal.butter(2, np.array([20e3, 180e3])/(500e3*2), 'bandpass')
 bp_avisoft = signal.filtfilt(b,a, raw_avisoft)
 bp_avisoft /= np.max(np.abs(bp_avisoft))
@@ -198,12 +234,12 @@ from matplotlib import gridspec
 mixed_datastreams = image_interpolated + beams_images*20
 
 vidmixfig = plt.figure()
-gs = gridspec.GridSpec(18, 2) 
-spectrumax = plt.subplot(gs[:2,:])
-spectrum500 = plt.subplot(gs[4:8,:])
-vidmixax = plt.subplot(gs[8:,:])
+gs = gridspec.GridSpec(25, 2) 
+spectrum500 = plt.subplot(gs[:4,:])
+spectrumax = plt.subplot(gs[6:10,:])
 
-   
+vidmixax = plt.subplot(gs[12:,:])
+ 
 
 
 mix_artist = vidmixax.imshow(mixed_datastreams[0,:,:], vmin=mixed_datastreams.min(), 
@@ -214,35 +250,36 @@ framenum_artist = vidmixax.set_xlabel(f'Frame number: {0}')
 fullaudio_kwargs = {'fs':fs, 'nperseg':128, 'noverlap':64,}
 f,t,sxx = signal.spectrogram(full_audio[:int(0.2*fs)],
                               **fullaudio_kwargs)
-fullspec_artist = spectrumax.imshow(sxx, aspect='auto', origin='lower')
-spectrumax.set_yticks([0, sxx.shape[0]], [0, f[-1]*1e-3])
-spectrumax.set_xticks([0, sxx.shape[1]], [0, np.around(t[-1],3)])
-spectrumax.set_ylabel('Acoustic camera - central mic')
+
+fullspec_artist = spectrumax.imshow(clip_image_dynamicrange(sxx),
+                                    aspect='auto', origin='lower',
+                                    vmax=0,
+                                    vmin=-80)
+spectrumax.set_yticks([0, sxx.shape[0]])
+spectrumax.set_yticklabels([str(0), str(f[-1]*1e-3)])
+
+spectrumax.set_xticks([0,  sxx.shape[1]],
+                      [0, np.around(t[-1],3)])
+spectrumax.set_ylabel('Ac. camera')
 
 audio500_kwargs = {'fs':fs_avisoft, 'nperseg':128, 'noverlap':64}
 f500,t500,sxx500 = signal.spectrogram(bp_avisoft[:int(0.2*fs_avisoft)],
                               **audio500_kwargs)
-f500spec_artist = spectrum500.imshow(sxx500, aspect='auto', origin='lower')
-relevant_rows = np.where(np.logical_and(f500>=20e3, f500<=150e3))
+f500spec_artist = spectrum500.imshow(clip_image_dynamicrange(sxx500),
+                                     aspect='auto', origin='lower', vmax=0,
+                                     vmin=-80)
+relevant_rows = np.where(np.logical_and(f500>=10e3, f500<=150e3))
 spectrum500.set_ylabel('Condenser mic')
 
-spectrum500.set_xticks([0, sxx500.shape[1]], [0, np.around(t[-1],3)])
+spectrum500.set_xticks([])
 spectrum500.set_ylim(np.min(relevant_rows), np.max(relevant_rows))
 fmin = np.around(f500[relevant_rows[0][0]]*1e-3, 2)
 fmax = np.around(f500[relevant_rows[0][-1]]*1e-3, 2)
 spectrum500.set_yticks([0, np.max(relevant_rows)], [fmin, fmax])
-#spectrumax.specgram(full_audio, NFFT=256, noverlap=128, xextent=[0, full_audio.size/fs])
-#spectrumax.set_xlim(0,0.2)
-
-# spectrum500.specgram(bp_avisoft,
-#                      Fs=int(500e3), NFFT=128, noverlap=64, 
-#                      xextent=[0, bp_avisoft.size/fs_avisoft])
 
 
-
-now_line = spectrumax.plot(np.tile(sxx.shape[1]*.5,2), [0,40], 'w-')[0]
+now_line = spectrumax.plot(np.tile(sxx.shape[1]*.5,2), [0,sxx.shape[0]], 'w-')[0]
 now_line2 = spectrum500.plot(np.tile(sxx500.shape[1]*.5,2), [0, sxx500.shape[0]], 'w-')[0]
-
 
 def update_vid(framenum):
     #print(f'Framenum saving: {framenum}')
@@ -259,9 +296,13 @@ def update_vid(framenum):
     stop_ind = int(t_stop*fs)
     f,t,sxx = signal.spectrogram(full_audio[start_ind:stop_ind],
                                   **fullaudio_kwargs)
-    fullspec_artist.set_array(sxx)
-    spectrumax.set_xticks([0, sxx.shape[1]],  
-                          [np.around(t_start,3), np.around(t_stop,3)])
+    fullspec_artist.set_array(clip_image_dynamicrange(sxx))
+    t_midpoint = np.around((np.around(t_stop,3)-np.around(t_start,3))/2 + t_start, 2)
+    spectrumax.set_xticks([0, sxx.shape[1]*0.5, sxx.shape[1]],  
+                          [np.around(t_start,3), t_midpoint, np.around(t_stop,3)])
+    
+    
+    
     t_avisoft_start = t_start-avisoft_full_start
     if t_avisoft_start >= 0:
         t_avisoft_stop = t_avisoft_start + 0.2
@@ -269,12 +310,13 @@ def update_vid(framenum):
         ind500_stop = int(t_avisoft_stop*fs_avisoft)
         f500,t500,sxx500 = signal.spectrogram(bp_avisoft[ind500_start:ind500_stop],
                                       **audio500_kwargs)
-        f500spec_artist.set_array(sxx500)
-        spectrum500.set_xticks([0, sxx500.shape[1]],
-                              [np.around(t_start,3), np.around(t_stop,3)])
+        f500spec_artist.set_array(clip_image_dynamicrange(sxx500))
+        spectrum500.set_title('')
+        spectrum500.set_xticks([])
     else:
-        #print('MIAAAAOW', framenum)
-        f500spec_artist.set_array(np.zeros((250,500)))
+        f500spec_artist.set_array(np.ones((250,500))*-80)
+        spectrum500.set_title('NO HIGH-SAMPLERATE AUDIO')
+        
         spectrum500.set_xticks([250],
                               ['No high sampling rate audio'])
 
@@ -283,17 +325,17 @@ def update_vid(framenum):
 
 
 def progress_func(currframe, total_frames):
-    if np.remainder(currframe,10)==0:
+    if np.remainder(currframe, 20)==0:
         print(f'{np.around(currframe/total_frames,2)} complete')
     
 
 video_filename = f'{tdms_path_name}_audiovideo.mp4'
 vid_ani = animation.FuncAnimation(fig=vidmixfig, func=update_vid,
-                                  frames=range(300, image_interpolated.shape[0]), 
+                                  frames=range(0, image_interpolated.shape[0]), 
                               interval=10).save(video_filename,
                                                 progress_callback=progress_func,
-                                                fps=100, dpi=200)
-#plt.show()
+                                                fps=10, dpi=200)
+
 
 
 
