@@ -92,7 +92,7 @@ for i,each in enumerate(spheres):
     each.compute_normals(inplace=True, flip_normals=True)
     each.extract_geometry().triangulate().save(f'sphere_{i}.stl')
 
-plotter.show(cpos='xy')
+#plotter.show(cpos='xy')
 #%%
 from stl import mesh
 material = pra.Material(energy_absorption=0.2, scattering=0.1)
@@ -129,7 +129,7 @@ for i in range(len(spheres)):
         )
 
 #%%
-fs = int(192e3)
+fs = int(250e3)
 
 
 #%%
@@ -145,16 +145,16 @@ mic_xyz = sphere_northpole + np.array([[0,2e-3,5e-3],
 
 
 
-#%%
-plot2 = pv.Plotter()
-#for each in spheres[:2]:
-plot2.add_mesh(spheres[idxnum], )
-#plot2.add_mesh(spheres[1])
-npoints = spheres[idxnum].points.shape[0]
-plot2.add_points(mic_xyz, color='blue')
-plot2.add_points(source_xyz, color='black')
-# #plot2.add_point_labels(spheres[idxnum].points, range(npoints))
-plot2.show()
+# #%%
+# plot2 = pv.Plotter()
+# #for each in spheres[:2]:
+# plot2.add_mesh(spheres[idxnum], )
+# #plot2.add_mesh(spheres[1])
+# npoints = spheres[idxnum].points.shape[0]
+# plot2.add_points(mic_xyz, color='blue')
+# plot2.add_points(source_xyz, color='black')
+# # #plot2.add_point_labels(spheres[idxnum].points, range(npoints))
+# plot2.show()
 
 
 
@@ -164,7 +164,7 @@ print('...initialising room...')
 room = pra.Room(
             walls,
             fs=fs,
-            max_order=2,
+            max_order=1,
             ray_tracing=False,
             air_absorption=True,
         )
@@ -176,6 +176,14 @@ chirp *= signal.windows.tukey(chirp.size, alpha=0.1)
 chirp *= 0.75
 print('...room initialised...')
 room.add_source(np.float64(source_xyz), signal=chirp)
+# now add all the other 'bat-calls' 
+non_hearing = set(range(len(spheres))) - set([idxnum])
+other_sources = np.array([spheres[each].points[0,:] + np.array([0,0,1e-2]) for each in non_hearing])
+emission_times = np.random.choice(np.linspace(0,40e-3, 30), other_sources.shape[0])
+
+for othersource, t_emission in zip(other_sources, emission_times):
+    room.add_source(np.float64(othersource), delay=t_emission)
+
 room.add_microphone_array(np.float64(mic_xyz.T))
 
 print('.....running...')
