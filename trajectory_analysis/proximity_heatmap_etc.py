@@ -142,13 +142,22 @@ thistraj_xyz = thistraj.loc[:,'x':'z'].to_numpy()
 thistrajpoints = pv.PolyData(thistraj_xyz)
 #thistrajpoints.rotate_z(rotation_angle, inplace=True)
 
+#%%
 
+plt.figure()
+for j in range(3):
+    plt.plot(thistraj_xyz[:,j], label=j)
+plt.legend()
+
+#%%
 multiplot = pv.Plotter()
 
 multiplot.add_mesh(mesh, opacity=0.3)
 multiplot.add_points(thistrajpoints , color='r', render_points_as_spheres=True, point_size=10)
 
 multiplot.show()
+
+
 
 #%% 
 # How 2D is the analysis actually? 
@@ -249,7 +258,7 @@ roll_angle_degrees = np.degrees(roll_angle)
 from egocentric_axes import *
 
 global_axis=[pv.Arrow([0,0,0], np.eye(3)[row,:], tip_radius=0.05, scale=0.25) for row in range(3) ]        
-phi_theta , ray_points = make_rays(np.linspace(0, 330, 20) - 30, np.linspace(0, 180, 5))
+phi_theta , ray_points = make_rays(np.linspace(0, 330, 4) - 30, np.linspace(0, 180, 4))
 
 movie_mode = True
 traj_file = '2018-08-17_P01_7000TMC'
@@ -353,6 +362,7 @@ for (ray_idx, subdf) in bat2cave.groupby('ray_index'):
     #plt.plot(subdf.sort_values('frame')['dist_to_surf'], label=intuitive_to_phitheta[ray_idx])
 plt.title("Traj index " + str(traj_index))
 plt.legend()
+
 
 #%%
 # Setting up the sensory regions. 

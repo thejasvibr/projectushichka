@@ -43,7 +43,7 @@ print(f'Total video recording time {np.sum(video_durations)} s')
 
 #%% Get an estimate of the total audio recording time in the first session. 
 
-audio_filefolder = 'F:\\fieldwork_2018_001\\actrackdata\\wav\\2018-06-21_001\\'
+audio_filefolder = 'D:\\fieldwork_2018_001\\actrackdata\\wav\\2018-06-21_001\\'
 audio_files = natsorted(glob.glob(audio_filefolder+'*.wav'))
 audio_durations = [sf.info(each).duration for each in audio_files]
 print(f'Total audio recording duration {sum(audio_durations)} s ')
@@ -55,7 +55,7 @@ odd_video_ind = int(np.argwhere(video_durations==list(odd_video_file)[0])[0])
 print(f'Odd video file is: {all_csvfiles[odd_video_ind]}')
 
 #%% Preparing audio for first 15s of 8000.TMC 
-audio_f8000  = audio_files[8]
+audio_f8000  = audio_files[10]
 fs = sf.info(audio_f8000).samplerate
 raw_audio, fs = sf.read(audio_f8000, stop=int(18*fs))
 #%%

@@ -153,13 +153,49 @@ plot2.camera.roll = -66
 plot2.camera.elevation = 0.5 #-15
 
 plot2.camera.view_angle = 45
-plot2.add_points(tmc1000_xyz , color='r', render_points_as_spheres=True, point_size=20)
-plot2.add_points(tmc7000_xyz , color='g', render_points_as_spheres=True, point_size=20)
-plot2.add_points(tmc12000_xyz , color='w', render_points_as_spheres=True, point_size=20)
+plot2.add_points(tmc1000_xyz , color='r', render_points_as_spheres=True, point_size=10)
+plot2.add_points(tmc7000_xyz , color='g', render_points_as_spheres=True, point_size=10)
+plot2.add_points(tmc12000_xyz , color='w', render_points_as_spheres=True, point_size=10)
 plot2.add_key_event('c', keyboard_callback)
 
 
 plot2.show()
+#%%
+#
+
+
+    
+plot2_1 = pv.Plotter(off_screen=False)
+plot2_1.image_scale=3
+def keyboard_callback():
+    print(plot2_1.camera.position)
+    print(plot2_1.camera.azimuth, plot2_1.camera.roll, plot2_1.camera.elevation)
+    print(plot2_1.camera.view_angle)
+    
+plot2_1.add_mesh(mesh, opacity=0.25)
+plot2_1.camera.position = (-4.0658486275620795, 0.8678076888611709, 20) #(3.75, -2.05, -0.57)
+plot2_1.camera.azimuth = -5
+plot2_1.camera.roll = -66
+plot2_1.camera.elevation = 0.5 #-15
+
+plot2_1.camera.view_angle = 45
+
+for dataset  in [tmc1000, tmc7000, tmc12000]:
+    for trajnum, trajdata in dataset.groupby('id'):
+        xyz = trajdata.loc[:,'x':'z'].to_numpy()
+        plot2_1.add_lines(xyz, width=10, connected=True, color='purple')
+
+def callback(a, b, distance):
+    plot2_1.add_text(f'Distance: {distance:.2f}', name='dist')
+
+
+plot2_1.add_measurement_widget(callback)
+
+plot2_1.show()
+#plot2_1.screenshot('2018-08-17_three-trajs.png')
+
+
+
 
 #%%
 camera = {}

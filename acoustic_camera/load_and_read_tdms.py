@@ -7,20 +7,8 @@ Avisoft-acoustic camera correspondence list
 
 |Acoustic camera timestamp | Avisoft recording number |
 |--------------------------|--------------------------|
-| 2023-12-18_18-12-48      | ch3\\T0000036            |
-| 2023-12-18_18-11-54      | ch3_T0000035             |
-| 2023-12-18_18-11-34      | ch3\\T0000034            |
-| 2023-12-18_18-10-37      | ch2\\T0000033            |
-| 2023-12-18_18-10-06  | ch3\\T0000032.wav 
-| 2023-12-18_18-09-29  | ch3\T0000031.wav
-| 2023-12-18_18-09-02  | ch3\\T0000030.wav
-| 2023-12-18_18-01-55  |  ch3\\T0000028.wav
-| 2023-12-18_17-58-14  | ch3\\T0000026.wav
-| 2023-12-18_17-57-36  | ch3\\T0000025.wav
-| 2023-12-18_17-57-19 | ch3\\T0000024.wav
-| 2023-12-18_17-56-58 | ch3\\T0000023.wav
-| 2023-12-18_17-55-48 | ch3\\T0000022.wav |
-| 2023-12-18_17-55-25|ch3\\T0000019.wav| ~ 7 sec in the video - tehre's upto 3 spots
+| 2023-12-18_17-55-02      | ch3\\T0000020.wav
+| 2023-12-18_17-55-25      | ch3\\T0000021.wav        | ~ 7 sec in the video - tehre's upto 3 spots
 @author: theja
 """
 
@@ -45,10 +33,14 @@ tdms_files = glob.glob('2023-12-18-Nuernbergzoo_arjanboonman/*.tdms')
 # 2023-12-18_17-55-25 is good (2-3 bats a time)
 # single bat: 17-47-03
 #
-current_file = tdms_files[16]
+current_file = tdms_files[14]
 tdms_path_name = os.path.split(current_file)[-1][:-5]
 
 tdms_file = TdmsFile.read(current_file)
+
+spectra = tdms_file['spectra']
+t_spectra = spectra['TimeStamps'].data
+
 beams = tdms_file['beams']
 
 beams_rows, beams_cols = 48, 64
@@ -64,16 +56,19 @@ pos_audio = tdms_file['timedata'].channels()[1].data
 full_audio = pos_audio+neg_audio
 full_audio = full_audio.astype(np.float64)
 
+samplerate = int(50e3)
+fs = samplerate
+
 full_audio /= np.max(np.abs(full_audio))
 full_audio *= 0.9
-io.wavfile.write(filename=f'{tdms_path_name}_48kHz_audio.wav', rate=int(48e3), data=full_audio)
+io.wavfile.write(filename=f'{tdms_path_name}_50kHz_audio.wav', rate=samplerate, data=full_audio)
 print(tdms_path_name)
 
 #%%
 # Try to align the acoustic cam audio and the known 500kHz audio data
 all_audio_files = glob.glob('ch3\*.WAV')
 creation_times = [dt.fromtimestamp(os.path.getctime(each)) for each in all_audio_files]
-audio_file_path = all_audio_files[16]
+audio_file_path = all_audio_files[14]
 audio_file_savename = audio_file_path.replace('\\','_')[:-4]
 fs_avisoft, raw_avisoft = io.wavfile.read(audio_file_path)
 print(audio_file_savename)
@@ -81,17 +76,18 @@ print(audio_file_savename)
 raw_avisoft = np.float64(raw_avisoft)
 raw_avisoft /= 2**15
 
-contraction_factor = 48/500
+contraction_factor = samplerate/fs_avisoft
 downsampled_audio  = signal.resample(raw_avisoft, int(raw_avisoft.size*contraction_factor))
 
 # perform the cross correlation based on the voices -  this is the best option
 # after a bit of trial and error. Therefore we filter out all the higher frequencise
 # to avoid the frogs and the aliased bat calls.
-fs = int(48e3)
-b,a = signal.butter(2, np.array([100, 1.5e3])/(2*fs), 'bandpass')
+
+b,a = signal.butter(2, np.array([100, 1.5e3])/(2*samplerate), 'bandpass')
 avisoft_bp = signal.lfilter(b, a, downsampled_audio)
 avisoft_bp /= abs(avisoft_bp).max()
-io.wavfile.write(f'avisoft_downsample_{audio_file_savename}.wav', rate=int(48e3), data=downsampled_audio)
+io.wavfile.write(f'avisoft_downsample_{audio_file_savename}.wav', 
+                 rate=samplerate, data=downsampled_audio)
 
 bp_accam = signal.lfilter(b, a, full_audio)
 bp_accam /= abs(bp_accam).max()
@@ -191,6 +187,7 @@ from scipy.interpolate import interp1d
 ij_all = product(range(frames_rows), range(frames_cols))
 t_camera = frames.channels()[-1].data
 t_beams = beams.channels()[-1].data
+#t_spectra = 
 image_interpolated = np.zeros((beams_images.shape))
 
 for (i,j)  in tqdm.tqdm(ij_all):
@@ -206,8 +203,46 @@ filtered_beams_images -= np.percentile(beams_images, q=2, axis=0)
 filtered_cam = image_interpolated.copy()
 filtered_cam -= np.percentile(image_interpolated, q=5,  axis=0)
 filtered_cam += abs(filtered_cam.min()) 
-filtered_cam = filtered_cam**2
+filtered_cam = filtered_cam**2 #%% to do or NOT to do?
 
+#%%
+minmax = np.apply_along_axis(lambda X: np.percentile(X, [0,100]), 0, beams_images[:,:,:])
+#%%
+diff_beamimages = beams_images[1:,:,:] - beams_images[:-1,:,:]
+bigdelta_dif = diff_beamimages.copy()
+deltadb_threshold = 0.3
+bigdelta_dif[bigdelta_dif<=deltadb_threshold] = 0
+bigdelta_dif[bigdelta_dif>deltadb_threshold] = 1
+#%%
+
+fnum = 400
+med_pixels = np.median(beams_images.reshape(beams_images.shape[0],-1), axis=1)
+plt.figure()
+# plt.subplot(311)
+# plt.imshow(bigdelta_dif[fnum,:,:]);plt.colorbar()
+# plt.subplot(312)
+# plt.imshow(beams_images[fnum,:,:]);plt.colorbar()
+# plt.subplot(313)
+plt.plot(beams_images[:fnum,120,131], label='spot')
+plt.plot(beams_images[:fnum,100,101], label='nearby')
+plt.plot(beams_images[:fnum,0,0], label='edge')
+plt.plot(med_pixels[:fnum], label='framewise median')
+plt.legend()
+
+plt.figure()
+plt.plot(beams_images[:fnum,120,131]-med_pixels[:fnum])
+
+#%%
+plt.figure()
+plt.subplot(311)
+plt.imshow(minmax[0,:], origin='lower', vmin=minmax.min(), vmax=minmax.max())
+
+plt.subplot(312)
+plt.imshow(minmax[1,:], origin='lower', vmin=minmax.min(), vmax=minmax.max())
+
+plt.subplot(313)
+plt.imshow(minmax[1,:]-minmax[0,:],origin='lower', vmin=0, vmax=20)
+plt.colorbar()
 
 #%%
 
@@ -225,22 +260,59 @@ def clip_image_dynamicrange(image, dynamic_range=80, good_dyn_range=3):
 
     return dB_image
 #%%
-b,a = signal.butter(2, np.array([20e3, 180e3])/(500e3*2), 'bandpass')
-bp_avisoft = signal.filtfilt(b,a, raw_avisoft)
+ch4_file = 'ch4' + '\\' + audio_file_path.split('\\')[-1]
+
+fsfull, ch4_audio = io.wavfile.read(ch4_file)
+ch4_audio = np.float64(ch4_audio)
+ch4_audio /= 2**15
+
+b,a = signal.butter(2, np.array([20e3, 180e3])/(fsfull*2), 'bandpass')
+bp_avisoft = signal.filtfilt(b,a, ch4_audio)
 bp_avisoft /= np.max(np.abs(bp_avisoft))
+
+#%% 
+frame_minsubtr = np.apply_along_axis(lambda X: X-X.min(), 0,beams_images)
+
+#%%
+fnum = 179
+
+t_avisoft_end = fnum*1e-2 - tstartstop_both[1,0]
+t_avisoft_start = t_avisoft_end - 2e-2
+avis_stastop_inds = np.int64(fsfull*np.array([t_avisoft_start, t_avisoft_end]))
+
+min_subtr = beams_images[fnum,:,:] - np.percentile(beams_images[fnum,:,:].flatten(),
+                                                   5)
+min_subtr[min_subtr<=0.5] = 0
+
+plt.figure();
+plt.subplot(211)
+plt.imshow(frame_minsubtr[fnum,:,:])
+plt.subplot(212)
+plt.specgram(bp_avisoft[avis_stastop_inds[0]:avis_stastop_inds[1]], Fs=fsfull,
+             NFFT=256, noverlap=200, xextent=[t_avisoft_start, t_avisoft_end])
+
+#%%
+plt.figure()
+plt.plot(frame_minsubtr[:,100,100])
+
+#%%
+
 
 from matplotlib import gridspec
 
 mixed_datastreams = image_interpolated + beams_images*20
-
+#%%
 vidmixfig = plt.figure()
 gs = gridspec.GridSpec(25, 2) 
 spectrum500 = plt.subplot(gs[:4,:])
 spectrumax = plt.subplot(gs[6:10,:])
 
 vidmixax = plt.subplot(gs[12:,:])
- 
 
+ 
+winsize = 0.02
+fullwinsize = winsize*2
+dynamic_range = 100
 
 mix_artist = vidmixax.imshow(mixed_datastreams[0,:,:], vmin=mixed_datastreams.min(), 
                              vmax=mixed_datastreams.max())
@@ -248,26 +320,27 @@ vidmixax.set_yticks([]); vidmixax.set_xticks([]);
 
 framenum_artist = vidmixax.set_xlabel(f'Frame number: {0}')
 fullaudio_kwargs = {'fs':fs, 'nperseg':128, 'noverlap':64,}
-f,t,sxx = signal.spectrogram(full_audio[:int(0.2*fs)],
+f,t,sxx = signal.spectrogram(full_audio[:int(fullwinsize*fs)],
                               **fullaudio_kwargs)
 
-fullspec_artist = spectrumax.imshow(clip_image_dynamicrange(sxx),
+fullspec_artist = spectrumax.imshow(clip_image_dynamicrange(sxx, dynamic_range),
                                     aspect='auto', origin='lower',
                                     vmax=0,
-                                    vmin=-80)
+                                    vmin=-dynamic_range)
 spectrumax.set_yticks([0, sxx.shape[0]])
 spectrumax.set_yticklabels([str(0), str(f[-1]*1e-3)])
 
 spectrumax.set_xticks([0,  sxx.shape[1]],
                       [0, np.around(t[-1],3)])
+
 spectrumax.set_ylabel('Ac. camera')
 
 audio500_kwargs = {'fs':fs_avisoft, 'nperseg':128, 'noverlap':64}
-f500,t500,sxx500 = signal.spectrogram(bp_avisoft[:int(0.2*fs_avisoft)],
+f500,t500,sxx500 = signal.spectrogram(bp_avisoft[:int(fullwinsize*fs_avisoft)],
                               **audio500_kwargs)
 f500spec_artist = spectrum500.imshow(clip_image_dynamicrange(sxx500),
                                      aspect='auto', origin='lower', vmax=0,
-                                     vmin=-80)
+                                     vmin=-dynamic_range)
 relevant_rows = np.where(np.logical_and(f500>=10e3, f500<=150e3))
 spectrum500.set_ylabel('Condenser mic')
 
@@ -288,24 +361,24 @@ def update_vid(framenum):
     
     # update spectrograms every 200 ms
     
-    t_start = framenum*1e-2 - 0.1
+    t_start = framenum*1e-2
     if t_start < 0:
-        t_start = framenum*1e-2
-    t_stop = t_start + 0.2
+        t_start = framenum*1e-2 - winsize
+    t_stop = t_start + winsize
     start_ind = int(t_start*fs)
     stop_ind = int(t_stop*fs)
     f,t,sxx = signal.spectrogram(full_audio[start_ind:stop_ind],
                                   **fullaudio_kwargs)
     fullspec_artist.set_array(clip_image_dynamicrange(sxx))
-    t_midpoint = np.around((np.around(t_stop,3)-np.around(t_start,3))/2 + t_start, 2)
+    t_midpoint = np.around(np.mean([t_start, t_stop]), 2)
     spectrumax.set_xticks([0, sxx.shape[1]*0.5, sxx.shape[1]],  
                           [np.around(t_start,3), t_midpoint, np.around(t_stop,3)])
     
     
     
-    t_avisoft_start = t_start-avisoft_full_start
+    t_avisoft_start = t_start-avisoft_full_start - winsize
     if t_avisoft_start >= 0:
-        t_avisoft_stop = t_avisoft_start + 0.2
+        t_avisoft_stop = t_avisoft_start + winsize
         ind500_start = int(t_avisoft_start*fs_avisoft)
         ind500_stop = int(t_avisoft_stop*fs_avisoft)
         f500,t500,sxx500 = signal.spectrogram(bp_avisoft[ind500_start:ind500_stop],
@@ -314,7 +387,7 @@ def update_vid(framenum):
         spectrum500.set_title('')
         spectrum500.set_xticks([])
     else:
-        f500spec_artist.set_array(np.ones((250,500))*-80)
+        f500spec_artist.set_array(np.ones((250,500))*-dynamic_range)
         spectrum500.set_title('NO HIGH-SAMPLERATE AUDIO')
         
         spectrum500.set_xticks([250],
@@ -325,16 +398,16 @@ def update_vid(framenum):
 
 
 def progress_func(currframe, total_frames):
-    if np.remainder(currframe, 20)==0:
-        print(f'{np.around(currframe/total_frames,2)} complete')
+    if np.remainder(currframe, 50)==0:
+        print(f'{np.around(currframe/total_frames,2)} {currframe} complete')
     
 
 video_filename = f'{tdms_path_name}_audiovideo.mp4'
 vid_ani = animation.FuncAnimation(fig=vidmixfig, func=update_vid,
-                                  frames=range(0, image_interpolated.shape[0]), 
+                                  frames=range(800,900),#image_interpolated.shape[0]), 
                               interval=10).save(video_filename,
                                                 progress_callback=progress_func,
-                                                fps=10, dpi=200)
+                                                fps=5, dpi=200)
 
 
 
