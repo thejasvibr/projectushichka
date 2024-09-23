@@ -11,6 +11,7 @@ Created on Fri Sep 20 13:03:47 2024
 """
 import numpy as np 
 import matplotlib.pyplot as plt 
+import matplotlib.patches as mpatches
 from skimage.filters.rank import entropy
 from skimage.morphology import disk, skeletonize
 from scipy.ndimage import label, find_objects
@@ -69,7 +70,7 @@ def specgram_batcall_detector(audio, fs, **kwargs):
     # Spectrogram/periodogram generation
     periodograms, freqs, t, img = plt.specgram(audio, Fs=fs, NFFT=nfft,
                                                noverlap=noverlap);
-    
+    plt.close()
     # normalise and process spectrogram image
     dynamic_range = kwargs.get('dynamic_range', 70) # dB
     periodograms_proc = periodograms.copy()
@@ -91,6 +92,43 @@ def specgram_batcall_detector(audio, fs, **kwargs):
     call_detections = regionprops(label_image)
     
     return (t, freqs, periodograms), entropy_map, call_detections 
+
+# Plot patches - utility function
+
+def patch_plotter(regions, axis):
+    for region in regions:
+        minr, minc, maxr, maxc = region.bbox
+        rect = mpatches.Rectangle(
+            (minc, minr),
+            maxc - minc,
+            maxr - minr,
+            fill=False,
+            edgecolor='red',
+            linewidth=1,
+        )
+        axis.add_patch(rect)
+    plt.show()
+
+#%% utility functions that fix indexing issues between bounding region detections
+# and 
+def limit_inds(indexvalue, array_size):
+    ''' limits index values to be >=0 and <= array_size'''
+    if indexvalue <= 0:
+        output_index = 0
+    elif indexvalue >= array_size:
+        output_index = array_size-1
+    else:
+        output_index = indexvalue
+    return output_index
+
+def limit_2D_inds(indices, array_dims):
+    min_row, min_col, max_row, max_col = indices
+    limit_minrow, limit_maxrow = [ limit_inds(each, array_dims[0])  for each in [min_row, max_row]]
+    limit_mincol, limit_maxcol = [ limit_inds(each, array_dims[1])  for each in [min_col, max_col]]
+    return (limit_minrow, limit_mincol, limit_maxrow, limit_maxcol)
+
+
+
 
 if __name__ == '__main__':
     print('hi')
@@ -118,7 +156,7 @@ if __name__ == '__main__':
     
     audio_raw, fs = sf.read(audiofile, start=start_sample, stop=stop_sample)
     b,a = signal.butter(1, 9e3/(fs*0.5), 'high')
-    audio = np.apply_along_axis(bandpass_audio, 0, audio_raw, ba=(b,a))
+    audio = np.apply_along_axis(audio_raw, 0, audio_raw, ba=(b,a))
     
     numch = audio.shape[1]
 
