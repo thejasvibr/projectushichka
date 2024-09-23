@@ -1,14 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Detecting bat calls
+Detecting bat calls 
 ===================
-
-Some ideas to try out: 
-    
-    > median subtract from frequency bands
-    > hand
-
-Created on Mon Sep  2 14:38:47 2024
 
 
 @author: theja
@@ -46,63 +39,8 @@ elif '3496' in audiofile:
 
 audio, fs = sf.read(audiofile, start=start_sample, stop=stop_sample)
 #%%
-ch_num = 7
+ch_num = 5
 periodograms, freqs, t, img = plt.specgram(audio[:,ch_num], Fs=fs, NFFT=96, noverlap=48)
-# plt.figure()
-# aa = plt.subplot(311)
-
-# where_highfreqs = np.logical_and(freqs>= 50e3, freqs<=95e3)
-# highfreqs = freqs[where_highfreqs]
-# highfreq_periodograms = periodograms[where_highfreqs, :]
-
-# sum_highfreq_pgrams = highfreq_periodograms.sum(axis=0)
-# smoothed_highfreqs = signal.medfilt(dB(sum_highfreq_pgrams), 15)
-
-# plt.subplot(312, sharex=aa)
-# row_ind = -1
-# plt.plot(t, dB(sum_highfreq_pgrams))
-
-# plt.subplot(313, sharex=aa)
-# plt.plot(t, smoothed_highfreqs)
-#%%
-# Fitting an overall polynomial is not so useful...
-# pp0 = np.polynomial.Polynomial.fit(t, dB(sum_highfreq_pgrams), deg=100)
-# plt.figure()
-# ab = plt.subplot(311)
-# plt.plot(t, pp0(t))
-# plt.plot(t, dB(sum_highfreq_pgrams))
-# plt.subplot(312, sharex=ab)
-# plt.plot(t, dB(sum_highfreq_pgrams)-pp0(t))
-# plt.subplot(313, sharex=ab)
-# plt.specgram(audio[:,ch_num], Fs=fs, NFFT=96, noverlap=48);
-
-#%%
-# What about splitting the signal into parts and then applying short-length detrending
-# def make_waveformplot(X, fs):
-#     t_x = np.linspace(0, X.size/fs, X.size)
-#     plt.plot(t_x, X)
-
-# num_parts = 100
-# parts_highfreq = np.array_split(dB(sum_highfreq_pgrams), num_parts)
-# parts_t_highfreq = np.array_split(t, num_parts)
-
-# polynom_parts = []
-# detrended = []
-# for (t_each, each) in zip(parts_t_highfreq, parts_highfreq):
-#     polynom = np.polynomial.Polynomial.fit(t_each, each, deg=2)
-#     polynom_pred = polynom(t_each)
-#     polynom_parts.append(polynom_pred)
-#     detrended.append(each - polynom_pred)
-
-# all_detrended = np.concatenate(detrended)
-# plt.figure()
-# bb = plt.subplot(311)
-# plt.specgram(audio[:,ch_num], Fs=fs, NFFT=96, noverlap=48)
-# plt.subplot(312, sharex=bb)
-# plt.plot(t, all_detrended)
-# plt.subplot(313, sharex=bb)
-# medfilt_detrended = signal.medfilt(all_detrended, 7)
-# plt.plot(t, medfilt_detrended)
 
 #%% We're getting somewhere - btut  the median filtering is actually removing some info... 
 # What about entropy filtering? 
@@ -116,10 +54,8 @@ dB_spec -= dB_spec.max()
 periodograms_proc[dB_spec<=-dynamic_range] = 0
 
 #%%
-#raise NotImplementedError('Dynamic range restrictionot yet applied. ')
 
-# periodograms_proc_colmeans = np.tile(np.mean(periodograms_proc, axis=1),
-#                                      periodograms_proc.shape[1]).reshape(periodograms_proc.shape)
+# Re-scale values to go from 0-1
 periodograms_proc = (periodograms_proc - periodograms_proc.min())/(periodograms_proc.max()-periodograms_proc.min())
 
 diagonal_template = np.fliplr(np.eye(5))
@@ -129,7 +65,7 @@ templ = entropy(periodograms_proc, diagonal_template)
 # Segment out regions that are not 0.
 nonzero_entropy = templ > 0.5
 
-label_image = label(nonzero_entropy)
+label_image, num_labels = label(nonzero_entropy, return_num=True)
 image_label_overlay = label2rgb(label_image, image=templ, bg_label=0)
 
 num_plots = 411
@@ -211,12 +147,83 @@ plt.subplot( num_plots+2, sharex=axsk)
 plt.imshow(skelet_entropy, aspect='auto', origin='lower')
 plt.text(textx, texty, 'skeletonised entropy map', color='w')
 
-
-
 #%%
 # Now also do some filtering on the detected regions themselves - they shouldn't be 
 # only high-frequency regions, and also include some low-frequency regions. 
 
-all_detections = regionprops(label_image)
+durn_threshold = 1.5e-3 # s 
+minfreq_thresh = 30e3 # Hz
+bw_thresh = 20e3 # Hz
+
+good_detection = []
+inds = np.zeros((num_labels, 4))
+for i, region in enumerate(regionprops(label_image)):
+    minr, minc, maxr, maxc = region.bbox
+    inds[i,:] = region.bbox
+    
+    # minfreq, t_start, maxfreq, t_stop = freqs[minr], t[minc], freqs[maxr], t[maxc]
+    
+    # duration = t_stop - t_start
+    # bandwidth = maxfreq - minfreq
+    
+    # # first filter according to duration  
+    # longenough = duration >= durn_threshold
+    # # then filter by min freq
+    # minfreq_lowenough = minfreq <= minfreq_thresh
+    # # and is there sufficient bandwidth?
+    # bandwidth_enough = bandwidth >= bw_thresh
+    
+    # if np.all([longenough, minfreq_thresh, bandwidth_enough]):
+    #     good_detection.append(region)
+
+#%% Now visualise this and compare with all regions 
+num_plots = 211
+plt.figure()
+ax0 = plt.subplot(num_plots)
+
+ax0.imshow(image_label_overlay, aspect='auto', origin='lower',)
+
+for region in regionprops(label_image):
+    # take regions with large enough areas
+    #if region.area >= 0.5:
+    # draw rectangle around segmented coins
+    minr, minc, maxr, maxc = region.bbox
+    rect = mpatches.Rectangle(
+        (minc, minr),
+        maxc - minc,
+        maxr - minr,
+        fill=False,
+        edgecolor='red',
+        linewidth=2,
+    )
+    ax0.add_patch(rect)
+    
+textx, texty = 1500, 45    
+plt.text(textx, texty, 'Detections', color='w')
+ax0.set_yticks(np.arange(image_label_overlay.shape[0])[::5], freqs[::5]*1e-3)
+ax0.set_xticks(np.arange(image_label_overlay.shape[1])[::125],
+               np.round(t[::125],2))
+plt.tight_layout()
+plt.grid()
+plt.show()
+
+ax1 = plt.subplot(num_plots+1, sharex=ax0)
+ax1.imshow(image_label_overlay, aspect='auto', origin='lower')
+
+for region in good_detection:
+    # take regions with large enough areas
+    #if region.area >= 0.5:
+    # draw rectangle around segmented coins
+    minr, minc, maxr, maxc = region.bbox
+    rect = mpatches.Rectangle(
+        (minc, minr),
+        maxc - minc,
+        maxr - minr,
+        fill=False,
+        edgecolor='red',
+        linewidth=2,
+    )
+    ax1.add_patch(rect)
+ax1.set_yticks(np.arange(image_label_overlay.shape[0])[::10], freqs[::10]*1e-3)
 
 
