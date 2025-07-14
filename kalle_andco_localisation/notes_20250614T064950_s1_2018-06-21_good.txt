@@ -1,0 +1,5 @@
+# Notes on the files and folder organisation of the  20250614T064950_s1_2018-06-21_good folder
+
+s1_2018-06-21_12_s_sol3d - speaker localisations
+
+s1_2018-06-21_11_r_sol3d - microphone localisations

@@ -19,6 +19,7 @@ License: Code released with MIT License
 """
 import glob
 import soundfile as sf
+import os
 import numpy as np 
 import matplotlib.pyplot as plt
 plt.rcParams['agg.path.chunksize'] = 10000
@@ -26,7 +27,13 @@ import scipy.signal as signal
 
 
 recording_timestamp = '2018-07-29_09-39-57' 
-filenames = glob.glob('./'+'SPKR*'+recording_timestamp+'*')
+hard_disk_path = os.path.join('E:\\',
+                              'fieldword_2018_002',
+                              'actrackdata',
+                              'wav',
+                              '2018-07-28_003\\')
+pattern = hard_disk_path+'SPKR*'+recording_timestamp+'*'
+filenames = glob.glob(pattern)
 
 #%% Load the sync signals only and compare the delay between the two 
 partaudio, fs = sf.read(filenames[0], stop=384000)
