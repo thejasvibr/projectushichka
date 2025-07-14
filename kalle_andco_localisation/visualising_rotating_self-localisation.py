@@ -33,6 +33,16 @@ import open3d as o3d
 np.random.seed(82319)
 #%%
 
+import argparse
+help_text = """night_number : Index number between 4-10. This index starts at 0 from 2018-06-19, but for this\
+    particular module the valid entries have to be between 4-9 - corresponding to 2018-07-21 onwards."""
+
+parser = argparse.ArgumentParser(description=help_text,)
+parser.add_argument('-nightnumber', type=int, help=help_text)
+args = parser.parse_args()
+
+# j should be between 0 - 5. 
+j = args.nightnumber - 4
 output_path = os.path.join('2025-06-18_Sv__Bat_Call_Localization__Status_meeting','*mic*.txt')
 mic_files = glob.glob(output_path)
 
@@ -60,7 +70,6 @@ def get_session_num(filename):
     return session_num
 
 
-j = 5
 session_num = get_session_num(mic_files[j])
 session_date = converting_session_to_date[session_num]
 
@@ -69,33 +78,12 @@ print(f'The session date is: {session_date}')
 df = pd.read_csv(mic_files[j], header=None)
 df = df.T
 xyz_points = df.to_numpy()
-#%%
-# SFS derived points - may show mirroring along the wall axis
 
-
-plot2a = pv.Plotter()
-mic_labels = np.arange(1, xyz_points.shape[0]+1).tolist()
-# plot2.add_points(xyz_points , color='r', render_points_as_spheres=True, point_size=10)
-actor2a = plot2a.add_point_labels(
-    xyz_points,
-    mic_labels,
-    italic=True,
-    font_size=10,
-    point_color='red',
-    point_size=20,
-    render_points_as_spheres=True,
-    always_visible=True,
-    shadow=True,
-)
-
-plot2a.add_title('SFS estimates: ' + converting_session_to_date[session_num])
-plot2a.show()
 
 #%%
 speaker_file = '_'.join(mic_files[j].split('_')[:-2])+'_soundpath_.txt'
 speaker_df = pd.read_csv(speaker_file, header=None).T
 speaker_xyz = speaker_df.to_numpy()
-
 
 #%% And now use known transformation matrix
 # to align the mic points with the real-world thermal & LiDAR coordinates. 
@@ -165,6 +153,7 @@ plotter.add_title(converting_session_to_date[session_num])
 
 
 plotter.subplot(0,0)
+plotter.add_title('w potential \n SFS mirroring')
 mic_labels = [ f' SFS: {each}'  for each in np.arange(1, xyz_points.shape[0]+1).tolist()]
 # plot2.add_points(xyz_points , color='r', render_points_as_spheres=True, point_size=10)
 plotter.add_point_labels(
@@ -256,49 +245,21 @@ def find_a_nonzerocoeff_plane(threedpts, max_attempts=1000):
 
 
 #%%
+# Wherever there is left-right mirroring along the cave wall with many mics - 'fix' this.
 if date=='2018-07-28':
     channel_inds = np.array([5,6,7,8]) - 1 
     xyzpts = xyz_points[channel_inds,:]
     a,b,c,d = find_a_nonzerocoeff_plane(xyzpts)
     realworld_mirrored = mirror_point(a,b,c,d, xyz_points[:,0], xyz_points[:,1], xyz_points[:,2])
     speaker_xyz_mirrored = mirror_point(a,b,c,d, speaker_xyz[:,0], speaker_xyz[:,1], speaker_xyz[:,2])
-    
-    plot2b = pv.Plotter()
-    mic_labels = [ f' SFS mirror: {each}'  for each in np.arange(1, xyz_points.shape[0]+1).tolist()]
-    
-    actor2 = plot2b.add_point_labels(
-        realworld_mirrored,
-        mic_labels,
-        italic=True,
-        font_size=10,
-        point_color='green',
-        point_size=20,
-        render_points_as_spheres=True,
-        always_visible=True,
-        shadow=True,
-    )
-    
-    plot2b.show()
-    
-    
+ 
     
 if date == '2018-08-14':
     channel_inds = np.array([1,2,3,4,5,6,7,12,13,14,15])-1
     xyzpts = xyz_points[channel_inds,:]
-    # three_random_points = np.random.choice(np.arange(xyzpts.shape[0]), 3)
-    # P,Q,R = [xyzpts[each,:] for each in three_random_points]
-    # a, b, c, d = get_plane_equation_from_points(P, Q, R) 
-    # print(a,b,c,d)
     a,b,c,d = find_a_nonzerocoeff_plane(xyzpts)
-    
-    
-    
     realworld_mirrored = mirror_point(a,b,c,d, xyz_points[:,0], xyz_points[:,1], xyz_points[:,2])
     speaker_xyz_mirrored = mirror_point(a,b,c,d, speaker_xyz[:,0], speaker_xyz[:,1], speaker_xyz[:,2])
-    
-    
-    
-
 
 if date == '2018-08-17':
     channel_inds = np.array([1,2,4,5,6,7])-1
@@ -311,17 +272,9 @@ if date == '2018-08-17':
         print(a,b,c,d)
         if not np.allclose(np.array([a,b,c,d]), np.zeros(4)):
             all_zeros = False
-        
-        
-        
-    
-    
+
     realworld_mirrored = mirror_point(a,b,c,d, xyz_points[:,0], xyz_points[:,1], xyz_points[:,2])
     speaker_xyz_mirrored = mirror_point(a,b,c,d, speaker_xyz[:,0], speaker_xyz[:,1], speaker_xyz[:,2])
-
-    
-    
-    
 
 if date == '2018-08-19':
     channel_inds = np.array([1,3,4,5,6,11,12,13,14])-1
@@ -338,10 +291,7 @@ if date == '2018-08-19':
     
     realworld_mirrored = mirror_point(a,b,c,d, xyz_points[:,0], xyz_points[:,1], xyz_points[:,2])
     speaker_xyz_mirrored = mirror_point(a,b,c,d, speaker_xyz[:,0], speaker_xyz[:,1], speaker_xyz[:,2])
-    
-    
-    
-    
+
 #%%
 # Visualise the camera and mirrored SFS coordinates together
 
@@ -493,5 +443,31 @@ plot3b.camera.roll = -90
 plot3b.camera.elevation = 5 #-15
 plot3b.camera.view_angle = 45
 
-plot3b.add_title(converting_session_to_date[session_num])
+plot3b.add_title(converting_session_to_date[session_num] + '\n all aligned')
 plot3b.show()
+
+
+
+#%%
+# And now save the 'world-aligned' mic coordinates
+micfilename_wo_extension = mic_files[j].split('.')[0]
+speakerfile_wo_extension = speaker_file.split('.')[0]
+
+columnnames_xyz = ['x','y','z']
+sfsmics_lidaraligned = pd.DataFrame(sfsmics_in_lidar, columns=columnnames_xyz)
+sfsspeaker_lidaraligned = pd.DataFrame(sfsspeaker_in_lidar, columns=columnnames_xyz)
+
+tgt_folder = '2025-06-18_Sv_lidar_aligned'
+if not os.path.exists(tgt_folder):
+    os.mkdir(tgt_folder)
+
+final_miclidaraligned = os.path.join(tgt_folder, 
+                                     os.path.split(f'{micfilename_wo_extension}_lidaraligned.csv')[-1])
+final_speakerlidaraligned = os.path.join(tgt_folder, 
+                                     os.path.split(f'{speakerfile_wo_extension}_lidaraligned.csv')[-1])
+
+sfsmics_lidaraligned.to_csv(final_miclidaraligned)
+sfsspeaker_in_lidar.to_csv(
+    f'{speakerfile_wo_extension}_lidaraligned.csv')
+
+
